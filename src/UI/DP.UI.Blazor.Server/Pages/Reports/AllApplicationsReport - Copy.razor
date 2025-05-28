@@ -1,0 +1,587 @@
+﻿@page "/reports/applications/all-copy"
+@inject IServiceManager ServiceManager
+@inject IJSRuntime JSRuntime
+@inject AppState AppState
+@inject NavigationManager Navigation
+
+
+
+<br />
+
+@if (isMobile)
+{
+    <div class="mb-4">
+        <h3 class="page-title mb-3">Applications Report</h3>
+        <div class="d-flex flex-column gap-2">
+            <RadzenButton Text="Export to PDF"
+            ButtonStyle="ButtonStyle.Success"
+            Shade="Shade.Dark"
+            Size="ButtonSize.Small"
+            Icon="picture_as_pdf"
+            IsBusy=@IsButtonBusy
+            Class="add-button-alt w-100"
+            Click="@(() => ExportToPdf())" />
+            <RadzenButton Text="Export to Excel"
+            ButtonStyle="ButtonStyle.Success"
+            Shade="Shade.Dark"
+            Size="ButtonSize.Small"
+            Icon="grid_on"
+            IsBusy=@IsButtonBusy
+            Class="add-button-alt w-100"
+            Click="@(() => ExportToExcel())" />
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4 gap-2">
+        <h3 class="page-title">Applications Report</h3>
+        <div class="d-flex gap-2 ms-auto">
+            <div class="page-header-alt">
+                <RadzenButton Text="Export to PDF"
+                ButtonStyle="ButtonStyle.Success"
+                Shade="Shade.Dark"
+                Size="ButtonSize.Small"
+                Icon="picture_as_pdf"
+                IsBusy=@IsButtonBusy
+                Class="add-button-alt"
+                Click="@(() => ExportToPdf())" />
+            </div>
+            <div class="page-header-alt">
+                <RadzenButton Text="Export to Excel"
+                ButtonStyle="ButtonStyle.Success"
+                Shade="Shade.Dark"
+                Size="ButtonSize.Small"
+                Icon="grid_on"
+                IsBusy=@IsButtonBusy
+                Class="add-button-alt"
+                Click="@(() => ExportToExcel())" />
+            </div>
+        </div>
+    </div>
+}
+
+@if (isMobile)
+{
+    @* Mobile Card View *@
+    <div class="mb-3">
+        <RadzenDataList Data="@Applications"
+                        TItem="ApplicationDetailResponse">
+        
+            <Template Context="app">
+                <RadzenCard class="mb-3">
+                    <div class="row">
+                        <div class="col">
+                            <strong>@app.FirstName @app.LastName</strong>
+                            <br />
+                            <small class="text-muted">ID: @app.IDNumber</small>
+                        </div>
+
+                    </div>
+                    <div class="row">
+                        <div class="col-6 text-start">
+                            <RadzenBadge BadgeStyle="@GetStatusBadgeStyle(app.Status ?? string.Empty)" Text="@app.Status" />
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="row small">
+                        <div class="col">
+                            <div><strong>Age:</strong> @app.Age</div>
+                            <div><strong>Sex:</strong> @app.Sex</div>
+                            <div><strong>Marital Status:</strong> @app.MaritalStatus</div>
+                            <div><strong>County:</strong> @app.County</div>
+                            <div><strong>Sub County:</strong> @app.SubCounty</div>
+                            <div><strong>Location:</strong> @app.Location</div>
+                            <div><strong>Sub Location:</strong> @app.SubLocation</div>
+                            <div><strong>Village:</strong> @app.Village</div>
+                            <div>
+                                <strong>Programmes:</strong> @(app.Programmes is not null && app.Programmes.Any() 
+                                ? string.Join(", ", app.Programmes.Select(p => p.Name)) 
+                                : "—")
+                            </div>
+                            <div><strong>Date:</strong> @app.ApplicationDate.ToString("dd/MM/yyyy")</div>
+                        </div>
+                    </div>
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    </div>
+}
+else
+{
+    @* Desktop Table View *@
+    <RadzenCard Class="app-table-container-bigger mb-3">
+        <ChildContent>
+            <RadzenDataGrid Data="@Applications" TItem="ApplicationDetailResponse" ShowPagingSummary="true" AllowPaging="true" PageSize="20" AllowSorting="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="FirstName" Title="First Name" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="LastName" Title="Last Name" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="IDNumber" Title="ID Number" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Age" Title="Age" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Sex" Title="Gender" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="MaritalStatus" Title="Marital Status" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="County" Title="County" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="SubCounty" Title="Sub County" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Location" Title="Location" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="SubLocation" Title="Sub Location" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Village" Title="Village" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Title="Programmes">
+                        <Template Context="app">
+                            @(app.Programmes is not null && app.Programmes.Any() ? string.Join(", ", app.Programmes.Select(p => p.Name)) : "—")
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Status" Title="Status" />
+                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="ApplicationDate" Title="Application Date" FormatString="{0:dd/MM/yyyy}" />
+                </Columns>
+            </RadzenDataGrid>
+        </ChildContent>
+    </RadzenCard>
+}
+
+
+
+<br />
+
+@* ToDo: Have it in the RadzenCard Footer *@
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <span>Page @CurrentPage of @TotalPages</span>
+    </div>
+    <div>
+        @if (TotalCount > 0)
+        {
+            <span>@TotalCount Records</span>
+        }
+    </div>
+</div>
+
+@if (!IsLoading && TotalPages > 1)
+{
+    <div class="mt-3 d-flex flex-wrap justify-content-end gap-2">
+        <RadzenButton Text="First"
+        ButtonStyle="ButtonStyle.Info"
+        Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+        Shade="Shade.Darker"
+        Disabled="@IsFirstPage"
+        Click="@(() => GoToPage(1))" />
+
+        <RadzenButton Text="Previous"
+        ButtonStyle="ButtonStyle.Info"
+        Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+        Shade="Shade.Darker"
+        Disabled="@IsFirstPage"
+        Click="@(() => GoToPage(CurrentPage - 1))" />
+
+        @foreach (var page in VisiblePages)
+        {
+            <RadzenButton Text="@(page.ToString())"
+            Click="@(() => GoToPage(page))"
+            Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+            ButtonStyle="@(page == CurrentPage
+                              ? ButtonStyle.Base
+                              : ButtonStyle.Light)"
+            Shade="Shade.Dark" />
+        }
+
+        <RadzenButton Text="Next"
+        ButtonStyle="ButtonStyle.Info"
+        Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+        Shade="Shade.Darker"
+        Disabled="@IsLastPage"
+        Click="@(() => GoToPage(CurrentPage + 1))" />
+
+        <RadzenButton Text="Last"
+        ButtonStyle="ButtonStyle.Info"
+        Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+        Shade="Shade.Darker"
+        Disabled="@IsLastPage"
+        Click="@(() => GoToPage(TotalPages))" />
+    </div>
+}
+
+<br />
+
+
+<RadzenMediaQuery Query="(max-width: 1199px)" Change="OnMqChange" />
+
+@code {
+    private CancellationTokenSource _cts = new();
+
+    private List<ApplicationDetailResponse> Applications = new();
+    private GenerateReportRequest<ApplicationDetailResponse> GenerateReportRequest = new();
+
+    private Dictionary<int, int?> PageCursorMap = new() { { 1, null } };
+    private Dictionary<int, List<ApplicationDetailResponse>> PageDataMap = new();
+    private Dictionary<int, DateTime> PageCacheTimestamps = new();
+
+    private List<int> _persistentVisiblePages = []; 
+    private int _maxPersistedWindowSize = 9; 
+
+    private DataFilter Filter = new();
+
+    private bool IsButtonBusy = false;
+    private bool IsLoading = true;
+    // Removed unused field: private bool showMobileWarning = true;
+    bool isMobile;
+
+    private int PageSize = 20;
+    private int CurrentPage = 1;
+    private int TotalPages = 0;
+    private int TotalCount = 0;
+    private bool IsFirstPage { get; set; }
+    private bool IsLastPage { get; set; }
+
+    private List<int> VisiblePages = new();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Filter.PageSize = PageSize;
+
+        try
+        {
+            IsLoading = true;
+            StateHasChanged();
+
+            if (AppState?.ApplicationDetails?.Count > 0)
+            {
+                Applications = AppState.ApplicationDetails ?? [];
+                UpdateVisiblePages();
+            }
+            else
+            {
+
+                await LoadApplications();
+            }
+
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Failed to load applications: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadApplications()
+    {
+        try
+        {
+            var applicationResponse = await ServiceManager.ReportService.GetAllApplicationsReportData(Filter);
+            if (applicationResponse == null || applicationResponse.Data == null)
+            {
+                Applications = [];
+                return;
+            }
+
+            if (applicationResponse.Data?.NextCursor.HasValue == true)
+            {
+                PageCursorMap[2] = applicationResponse.Data.NextCursor;
+            }
+
+            Applications = applicationResponse.Data?.Items ?? [];
+
+            TotalCount = applicationResponse.Data?.TotalCount ?? 0;
+            TotalPages = applicationResponse.Data?.TotalPages ?? 0;
+            CurrentPage = applicationResponse.Data?.CurrentPage ?? 1;
+            IsFirstPage = applicationResponse.Data?.IsFirstPage ?? false;
+            IsLastPage = applicationResponse.Data?.IsLastPage ?? false;
+
+            Filter.Cursor = applicationResponse.Data?.NextCursor;
+            Filter.PageNumber = applicationResponse.Data?.CurrentPage ?? 1;
+
+            AppState.MergeApplicationDetailsResponse(Applications);
+
+            UpdateVisiblePages();
+
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+
+    }
+
+    private async Task ExportToPdf()
+    {
+        GenerateReportRequest = new GenerateReportRequest<ApplicationDetailResponse>
+        {
+            ReportKey = nameof(ApplicationDetailResponse) ?? "Report",
+            ReportName = "Applications Report",
+            DataList = Applications
+        };
+
+        var response = await ServiceManager.ReportService.GeneratePdfAsync<ApplicationDetailResponse>(GenerateReportRequest);
+        if (response != null)
+        {
+            var fileName = $"{GenerateReportRequest.ReportName}.pdf";
+            var fileContent = Convert.ToBase64String(response.Data ?? []);
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, fileContent);
+        }
+    }
+
+    private async Task ExportToExcel()
+    {
+        GenerateReportRequest = new GenerateReportRequest<ApplicationDetailResponse>
+        {
+            ReportKey = nameof(ApplicationDetailResponse) ?? "Report",
+            ReportName = "Applications Report",
+            DataList = Applications
+        };
+
+        var response = await ServiceManager.ReportService.GenerateExcelAsync<ApplicationDetailResponse>(GenerateReportRequest);
+        if (response != null)
+        {
+            var fileName = $"{GenerateReportRequest.ReportName}.xlsx";
+            var fileContent = Convert.ToBase64String(response.Data ?? []);
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, fileContent);
+        }
+    }
+
+    void OnMqChange(bool matches)
+    {
+        isMobile = matches;
+    }
+
+    private BadgeStyle GetStatusBadgeStyle(string status)
+    {
+        return status?.ToLower() switch
+        {
+            "completed" => BadgeStyle.Success,
+            "pending" => BadgeStyle.Warning,
+            "rejected" => BadgeStyle.Danger,
+            _ => BadgeStyle.Secondary
+        };
+    }
+
+    private async Task OpenInBrowser()
+    {
+        // Get current URL
+        var currentUrl = Navigation.Uri;
+
+        // Open in new tab/window
+        await JSRuntime.InvokeVoidAsync("open", currentUrl, "_blank");
+    }
+
+    private void UpdateVisiblePages(bool forceRecalculate = false)
+    {
+        // If we have persisted pages and not forcing recalculate
+        if (_persistentVisiblePages.Any() && !forceRecalculate && _persistentVisiblePages.Contains(CurrentPage))
+        {
+            // Just use the existing window
+            VisiblePages = _persistentVisiblePages;
+            return;
+        }
+
+        // Calculate new window
+        int startPage, endPage;
+
+        // If we have previous pages, try to extend from them
+        if (_persistentVisiblePages.Any())
+        {
+            int minPage = _persistentVisiblePages.Min();
+            int maxPage = _persistentVisiblePages.Max();
+
+            if (CurrentPage < minPage)
+            {
+                // Navigating left - extend window left
+                startPage = Math.Max(1, CurrentPage);
+                endPage = maxPage;
+            }
+            else if (CurrentPage > maxPage)
+            {
+                // Navigating right - extend window right
+                startPage = minPage;
+                endPage = Math.Min(TotalPages, CurrentPage);
+            }
+            else
+            {
+                // Shouldn't happen due to initial check
+                startPage = minPage;
+                endPage = maxPage;
+            }
+
+            // Ensure we don't exceed max window size
+            if (endPage - startPage + 1 > _maxPersistedWindowSize)
+            {
+                if (CurrentPage < minPage)
+                {
+                    // Slide window left
+                    endPage = startPage + _maxPersistedWindowSize - 1;
+                }
+                else
+                {
+                    // Slide window right
+                    startPage = endPage - _maxPersistedWindowSize + 1;
+                }
+            }
+        }
+        else
+        {
+            // Initial load - start with current page + next
+            startPage = Math.Max(1, CurrentPage);
+            endPage = Math.Min(TotalPages, CurrentPage + 1);
+        }
+
+        _persistentVisiblePages = Enumerable.Range(startPage, endPage - startPage + 1).ToList();
+        VisiblePages = _persistentVisiblePages;
+    }
+
+    private async Task GoToPage(int page)
+    {
+        try
+        {
+            IsLoading = true;
+
+            if (page < 1 || page > TotalPages)
+                return;
+
+            // Check cache first
+            if (IsPageCached(page))
+            {
+                Applications = PageDataMap[page];
+                CurrentPage = page;
+                IsFirstPage = page == 1;
+                IsLastPage = page == TotalPages;
+                UpdateVisiblePages();
+                return;
+            }
+
+            // If requesting a page beyond what we've loaded before
+            if (page > TotalPages && !IsLoading)
+            {
+                // Don't allow jumping to unknown pages until initial load
+                await JSRuntime.InvokeVoidAsync("alert", "Please load data first - Click Next");
+                return;
+            }
+
+            IsLoading = true;
+            StateHasChanged();
+
+            Filter.Cursor = GetCursorForPage(page);
+            Filter.PageNumber = page;
+
+            var response = await ServiceManager.ReportService.GetAllApplicationsReportData(Filter);
+            if (response?.Data == null) return;
+
+            if (response.Data.TotalPages > TotalPages)
+            {
+                TotalPages = response.Data.TotalPages;
+            }
+
+            Applications = response.Data.Items ?? [];
+
+            AppState.MergeApplicationDetailsResponse(Applications);
+
+            PageDataMap[page] = Applications;
+
+            PageCacheTimestamps[page] = DateTime.UtcNow;
+
+            UpdateCursorMappings(page, response.Data.NextCursor, response.Data.PreviousCursor);
+
+            CurrentPage = page;
+            IsFirstPage = response.Data.IsFirstPage;
+            IsLastPage = response.Data.IsLastPage;
+
+            if (page == 1) IsLoading = false;
+
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading page {page}: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            UpdateVisiblePages();
+            StateHasChanged();
+        }
+    }
+
+    private bool IsPageCached(int page)
+    {
+        if (!PageDataMap.TryGetValue(page, out var cachedData))
+            return false;
+
+        if (!PageCacheTimestamps.TryGetValue(page, out var timestamp))
+            return false;
+
+        return DateTime.UtcNow - timestamp < TimeSpan.FromMinutes(5);
+    }
+
+    private int? GetCursorForPage(int targetPage)
+    {
+        // Simple case: first page
+        if (targetPage == 1) return null;
+
+        // Exact match
+        if (PageCursorMap.TryGetValue(targetPage, out var cursor))
+            return cursor;
+
+        // Find nearest lower page with cursor
+        var nearestPage = PageCursorMap.Keys
+            .Where(k => k < targetPage)
+            .OrderByDescending(k => k)
+            .FirstOrDefault();
+
+        return nearestPage > 0 ? PageCursorMap[nearestPage] : null;
+    }
+
+    private void UpdateCursorMappings(int currentPage, int? nextCursor, int? prevCursor)
+    {
+        if (nextCursor.HasValue)
+        {
+            PageCursorMap[currentPage + 1] = nextCursor.Value;
+        }
+
+        if (prevCursor.HasValue && currentPage > 1)
+        {
+            PageCursorMap[currentPage - 1] = prevCursor.Value;
+        }
+
+        // Prune old cursor mappings to prevent memory bloat
+        if (PageCursorMap.Count > 50)
+        {
+            var oldestPages = PageCursorMap.Keys
+                .OrderBy(k => k)
+                .Take(PageCursorMap.Count - 50);
+
+            foreach (var page in oldestPages)
+            {
+                InvalidateCache(page);
+            }
+        }
+    }
+
+    private void UpdatePaginationState(PagedResult<ApplicationDetailResponse> data)
+    {
+        TotalCount = data.TotalCount;
+        TotalPages = data.TotalPages;
+        CurrentPage = data.CurrentPage;
+        IsFirstPage = data.IsFirstPage;
+        IsLastPage = data.IsLastPage;
+        Filter.Cursor = data.NextCursor;
+        Filter.PageNumber = data.CurrentPage;
+    }
+
+    public void InvalidateCache(int page)
+    {
+        PageCursorMap.Remove(page);
+        PageDataMap.Remove(page);
+        PageCacheTimestamps.Remove(page);
+
+        PageDataMap.Clear();
+        PageCursorMap.Clear();
+        PageCursorMap[1] = null; // Reset to initial state
+    }
+}

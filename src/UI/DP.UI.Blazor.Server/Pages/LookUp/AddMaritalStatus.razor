@@ -1,0 +1,93 @@
+﻿@page "/add-marital-status"
+@inject IServiceManager ServiceManager
+@inject NavigationManager Navigation
+@inject AppState AppState
+@inject IJSRuntime JSRuntime
+
+<h3>Add Marital Status</h3>
+
+<br />
+
+<EditForm Model="@createMaritalStatusRequest" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <RadzenLabel Text="Name" />
+    <RadzenTextBox @bind-Value="createMaritalStatusRequest.Name" Style="width:100%" />
+    <ValidationMessage For="@(() => createMaritalStatusRequest.Name)" />
+
+    <div class="d-flex gap-2 mt-4 justify-content-end" style="max-width: 400px;">
+
+
+        <RadzenButton Text="Save"
+                      ButtonStyle="ButtonStyle.Info"
+                      ButtonType="ButtonType.Submit"
+                      Shade="Shade.Darker"
+                      Size="ButtonSize.Medium"
+                      IsBusy=@IsButtonBusy
+                      Class="me-2 flex-fill" />
+
+        <RadzenButton Text="Cancel"
+                      ButtonStyle="ButtonStyle.Danger"
+                      ButtonType="ButtonType.Reset"
+                      Shade="Shade.Light"
+                      Size="ButtonSize.Medium"
+                      IsBusy=@IsButtonBusy
+                      Class="flex-fill"
+                      Click="@(() => Navigation.NavigateTo("/marital-statuses"))" />
+
+
+    </div>
+
+</EditForm>
+
+<br />
+
+@code {
+    private CreateMaritalStatusRequest createMaritalStatusRequest = new();
+
+    private bool IsButtonBusy = false;
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            IsButtonBusy = true;
+
+            if (string.IsNullOrWhiteSpace(createMaritalStatusRequest.Name))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Name is required.");
+                return;
+            }
+
+            if (AppState.LookUpData?.MaritalStatuses.Any(x => x.Name.Equals(createMaritalStatusRequest.Name, StringComparison.OrdinalIgnoreCase)) == true)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Marital Status with this name already exists.");
+                return;
+            }
+
+            var response = await ServiceManager.MaritalStatusService.CreateAsync(createMaritalStatusRequest);
+            if (response.Successful && response.Data != null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Marital Status added successfully.");
+
+                AppState.MergeMaritalStatus(response.Data);
+
+                Navigation.NavigateTo("/marital-statuses");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {response.Message}");
+            }
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+        finally
+        {
+            IsButtonBusy = false;
+            StateHasChanged();
+        }
+    }
+}

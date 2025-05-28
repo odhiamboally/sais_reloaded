@@ -1,0 +1,118 @@
+﻿@page "/edit-marital-status/{Id:int}"
+@inject IServiceManager ServiceManager
+@inject NavigationManager Navigation
+@inject AppState AppState
+@inject IJSRuntime JSRuntime
+
+<h3>Edit Marital Status</h3>
+<br />
+
+<EditForm Model="@updateMaritalStatusRequest" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <RadzenLabel Text="Name" />
+    <RadzenTextBox @bind-Value="updateMaritalStatusRequest.Name" Style="width:100%" />
+    <ValidationMessage For="@(() => updateMaritalStatusRequest.Name)" />
+
+    <div class="d-flex gap-2 mt-4 justify-content-end" style="max-width: 400px;">
+
+
+        <RadzenButton Text="Save"
+                      ButtonStyle="ButtonStyle.Info"
+                      ButtonType="ButtonType.Submit"
+                      Shade="Shade.Darker"
+                      Size="ButtonSize.Medium"
+                      IsBusy=@IsButtonBusy
+                      Class="me-2 flex-fill" />
+                      
+
+        <RadzenButton Text="Cancel"
+                      ButtonStyle="ButtonStyle.Danger"
+                      ButtonType="ButtonType.Reset"
+                      Shade="Shade.Light"
+                      Size="ButtonSize.Medium"
+                      IsBusy=@IsButtonBusy
+                      Class="flex-fill"
+                      Click="@(() => Navigation.NavigateTo("/marital-statuses"))" />
+
+
+    </div>
+
+</EditForm>
+
+<br />
+
+@code {
+
+    [Parameter] public int Id { get; set; }
+
+    private bool IsButtonBusy = false;
+
+    private UpdateMaritalStatusRequest updateMaritalStatusRequest = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        //Get From AppState
+        var stateData = AppState.LookUpData?.MaritalStatuses.FirstOrDefault(x => x.Id == Id);
+        if (stateData != null)
+        {
+            updateMaritalStatusRequest = new UpdateMaritalStatusRequest
+            {
+                Id = stateData.Id,
+                Name = stateData.Name
+            };
+        }
+        else
+        {
+            //Get From API
+            var serviceResponse = await ServiceManager.MaritalStatusService.GetByIdAsync(Id);
+            if (serviceResponse.Successful)
+            {
+                updateMaritalStatusRequest = new UpdateMaritalStatusRequest
+                    {
+                        Id = serviceResponse.Data?.Id ?? 0,
+                        Name = serviceResponse.Data?.Name
+                    };
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Could not load record.");
+                Navigation.NavigateTo("/marital-statuses");
+            }
+            
+        }
+       
+    }
+
+    private async Task HandleSubmit()
+    {
+        var response = await ServiceManager.MaritalStatusService.UpdateAsync(Id, updateMaritalStatusRequest);
+
+        if (response.Successful && response.Data != null)
+        {
+            var updated = response.Data;
+
+            var index = AppState.LookUpData?.MaritalStatuses.FindIndex(x => x.Id == updated.Id);
+
+            if (index.HasValue && index.Value >= 0)
+            {
+                var sexes = AppState.LookUpData?.MaritalStatuses;
+                if (sexes != null)
+                {
+                    sexes[index.Value] = updated;
+                }
+
+                StateHasChanged(); 
+            }
+
+            await JSRuntime.InvokeVoidAsync("alert", "Updated successfully");
+            Navigation.NavigateTo("/marital-statuses");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {response.Message}");
+        }
+
+    }
+}

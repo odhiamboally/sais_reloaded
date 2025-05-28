@@ -1,0 +1,96 @@
+﻿@page "/add-sex"
+@inject IServiceManager ServiceManager
+@inject AppState AppState
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<h3>Add Sex</h3>
+
+<br />
+
+<EditForm Model="@createSexRequest" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <RadzenLabel Text="Name" />
+    <RadzenTextBox @bind-Value="createSexRequest.Name" Style="width:100%" />
+    <ValidationMessage For="@(() => createSexRequest.Name)" />
+
+
+    <div class="d-flex gap-2 mt-4 justify-content-end" style="max-width: 400px;">
+
+
+        <RadzenButton Text="Save"
+                      ButtonStyle="ButtonStyle.Info"
+                      ButtonType="ButtonType.Submit"
+                      Shade="Shade.Darker"
+                      Size="ButtonSize.Medium"
+                      IsBusy=@IsButtonBusy
+                      Class="me-2 flex-fill" />
+                      
+
+        <RadzenButton Text="Cancel"
+                      ButtonStyle="ButtonStyle.Danger"
+                      ButtonType="ButtonType.Reset"
+                      Shade="Shade.Light"
+                      Size="ButtonSize.Medium"
+                      IsBusy=@IsButtonBusy
+                      Class="flex-fill"
+                      Click="@(() => Navigation.NavigateTo("/sexes"))" />
+
+
+    </div>
+
+</EditForm>
+
+<br />
+
+@code {
+    private CreateSexRequest createSexRequest = new();
+    private bool IsButtonBusy = false;
+
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            IsButtonBusy = true;
+
+            if (string.IsNullOrWhiteSpace(createSexRequest.Name))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Name is required.");
+                return;
+            }
+
+            if (AppState.LookUpData?.Sexes.Any(x => x.Name.Equals(createSexRequest.Name, StringComparison.OrdinalIgnoreCase)) == true)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Sex with this name already exists.");
+                return;
+            }
+
+            var response = await ServiceManager.SexService.CreateAsync(createSexRequest);
+            if (response.Successful && response.Data != null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Sex added successfully.");
+
+                AppState.MergeSex(response.Data);
+
+                Navigation.NavigateTo("/sexes");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {response.Message}");
+            }
+        }
+        catch (Exception)
+        {
+            
+            throw;
+        }
+        finally
+        {
+            IsButtonBusy = false;
+            StateHasChanged();
+        }
+        
+    }
+}

@@ -1,0 +1,10 @@
+﻿using DP.UI.Blazor.Server.Dtos.Common;
+using DP.UI.Blazor.Server.Dtos.Lookup;
+
+namespace DP.UI.Blazor.Server.Contracts.Abstractions.IServices;
+
+public interface ILocationService
+{
+    Task<AppResponse<List<LocationResponse>>> GetAllAsync();
+    Task<AppResponse<LocationResponse>> GetByIdAsync(int Id);
+}

@@ -1,0 +1,329 @@
+﻿@inject IJSRuntime JSRuntime
+@inject IServiceManager ServiceManager
+@inject IWebHostEnvironment Environment
+
+
+<div class="p-3">
+    <div class="d-flex justify-content-start align-items-center mb-4 gap-2">
+        <div class="page-header-alt">
+            <RadzenButton Text="Export to Pdf"
+            ButtonStyle="ButtonStyle.Success"
+            Shade="Shade.Dark"
+            Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+            Icon="picture_as_pdf"
+            IsBusy=@IsButtonBusy
+            Class="add-button-alt"
+            Click="@(() => ExportToPdf())"
+            Disabled="@IsExporting" />
+        </div>
+        <div class="page-header-alt">
+            <RadzenButton Text="Export to Excel"
+            ButtonStyle="ButtonStyle.Success"
+            Shade="Shade.Dark"
+            Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+            Icon="grid_on"
+            IsBusy=@IsButtonBusy
+            Class="add-button-alt"
+            Click="@(() => ExportToExcel())"
+            Disabled="@IsExporting" />
+        </div>
+    </div>
+
+    <RadzenCard Title="Applicant Details" Style="max-width:800px; margin:auto;">
+        <ChildContent>
+            <RadzenFieldset Text="Personal Information" Style="margin-bottom:20px;">
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Full Name" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenTextBox 
+                        Value="@($"{Application?.FirstName} {Application?.MiddleName} {Application?.LastName}".Trim())" 
+                        ReadOnly="true" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="ID Number" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenTextBox Value="@Application?.IDNumber" ReadOnly="true" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Date of Birth" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenTextBox 
+                        Value="@(Application?.DateOfBirth.ToString("dd/MM/yyyy") ?? "N/A")" 
+                        ReadOnly="true" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Sex" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenTextBox Value="@Application?.Sex" ReadOnly="true" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Marital Status" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenTextBox Value="@Application?.MaritalStatus" ReadOnly="true" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Phone" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenTextBox Value="@Application?.TelephoneContact" ReadOnly="true" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Address" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenTextBox Value="@Application?.PhysicalAddress" ReadOnly="true" Style="width:100%" />
+                    </div>
+                </div>
+            </RadzenFieldset>
+
+            <RadzenFieldset Text="Application Information">
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Programmes" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenDataList Data="@ProgrammeNames"
+                        TItem="string"
+                        Style="width:100%">
+                            <Template Context="name">
+                                @name
+                            </Template>
+                        </RadzenDataList>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Application Date" />
+                    </div>
+                    <div class="col-sm-8">
+                        <RadzenTextBox 
+                        Value="@(Application?.ApplicationDate.ToString("dd/MM/yyyy") ?? "N/A")" 
+                        ReadOnly="true" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="row align-items-center mb-3">
+                    <div class="col-sm-4">
+                        <RadzenLabel Text="Status" />
+                    </div>
+                    <div class="col-sm-8">
+                        @if (Application?.Status == "Pending")
+                        {
+                            <RadzenBadge Text="Pending" BadgeStyle="BadgeStyle.Primary" />
+                        }
+                        @if (Application?.Status == "Completed")
+                        {
+                            <RadzenBadge Text="Completed" BadgeStyle="BadgeStyle.Secondary" />
+                        }
+                        @if (Application?.Status == "Approved")
+                        {
+                            <RadzenBadge Text="Approved" BadgeStyle="BadgeStyle.Success" />
+                        }
+                        @if (Application?.Status == "Rejected")
+                        {
+                            <RadzenBadge Text="Rejected" BadgeStyle="BadgeStyle.Danger" />
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Application?.ImageSignature))
+                {
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <RadzenLabel Text="Signature" />
+                        </div>
+                        <div class="col-sm-8">
+                            <RadzenImage Path=@($"data:image/png;base64,{Application.ImageSignature}")
+                            Style="max-height:150px; width:auto;"
+                            Class="border rounded" />
+                        </div>
+                    </div>
+                }
+            </RadzenFieldset>
+        </ChildContent>
+    </RadzenCard>
+
+
+
+</div>
+
+<RadzenMediaQuery Query="(max-width: 454px)" Change="OnMqChange" />
+
+@code {
+
+
+    [Parameter]
+    public ApplicationDetailResponse Application { get; set; } = new();
+
+    public List<ApplicationDetailResponse> ApplicationList { get; set; } = new();
+    public GenerateReportRequest<ApplicationDetailResponse> GenerateReportRequest { get; set; } = new();
+
+    private List<string?> ProgrammeNames => Application?.Programmes.Select(p => p.Name).ToList() ?? [];
+
+
+
+    private bool IsButtonBusy = false;
+    private bool IsExporting = false;
+    private bool isMobile;
+
+    private async Task ExportToPdf()
+    {
+        try
+        {
+            IsButtonBusy = true;
+            IsExporting = true;
+
+            ApplicationList.Add(Application);
+
+            if (ApplicationList == null || !ApplicationList.Any())
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Report Data was not supplied.");
+                return;
+            }
+
+            GenerateReportRequest = new GenerateReportRequest<ApplicationDetailResponse>
+            {
+                ReportKey = nameof(ApplicationDetailResponse) ?? "Report",
+                ReportName = "Application Report",
+                LogoBase64 = (await ReadImageAsync()).base64String,
+                Data = Application,
+                DataList = ApplicationList,
+            };
+                
+            var reportKey = Application?.IDNumber ?? string.Empty;
+            if (string.IsNullOrEmpty(reportKey))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Invalid report key.");
+                return;
+            }
+
+            var response = await ServiceManager.ReportService.GeneratePdfAsync<ApplicationDetailResponse>(GenerateReportRequest);
+
+            if (response == null || !response.Successful)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Failed to generate report. | {response?.Message}");
+            }
+            else
+            {
+                var fileName = $"{GenerateReportRequest.ReportName}_{reportKey}.pdf";
+                var fileContent = Convert.ToBase64String(response.Data ?? Array.Empty<byte>());
+
+                await JSRuntime.InvokeVoidAsync("alert", "Report generated successfully!");
+
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, fileContent);
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            IsButtonBusy = false;
+            IsExporting = false;
+        }
+    }
+
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            ApplicationList.Add(Application);
+
+            if (ApplicationList == null || !ApplicationList.Any())
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Report Data was not supplied.");
+                return;
+            }
+
+            GenerateReportRequest = new GenerateReportRequest<ApplicationDetailResponse>
+                {
+                    ReportKey = nameof(ApplicationDetailResponse) ?? "Report",
+                    ReportName = "Application Report",
+                    Data = Application,
+                    DataList = ApplicationList,
+                };
+
+            var reportKey = Application?.IDNumber ?? string.Empty;
+            if (string.IsNullOrEmpty(reportKey))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Invalid report key.");
+                return;
+            }
+
+            var response = await ServiceManager.ReportService.GenerateExcelAsync<ApplicationDetailResponse>(GenerateReportRequest);
+
+            if (response == null || !response.Successful)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Failed to generate report. | {response?.Message}");
+            }
+            else
+            {
+                var fileName = $"{GenerateReportRequest.ReportName}_{reportKey}.xlsx";
+                var fileContent = Convert.ToBase64String(response.Data ?? []);
+
+                await JSRuntime.InvokeVoidAsync("alert", "Report generated successfully!");
+
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, fileContent, "xlsx");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+    }
+
+
+    private async Task<(string base64String, string imageDataUrl, byte[] imageBytes)> ReadImageAsync()
+    {
+        try
+        {
+            var imagePath = Path.Combine(Environment.WebRootPath, "images", "coat_of_arms.png");
+            var imageBytes = await File.ReadAllBytesAsync(imagePath);
+
+            var base64String = Convert.ToBase64String(imageBytes);
+            var imageDataUrl = $"data:image/png;base64,{base64String}";
+
+            return (base64String, imageDataUrl, imageBytes);
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    void OnMqChange(bool matches)
+    {
+        isMobile = matches;
+    }
+
+
+
+
+
+}

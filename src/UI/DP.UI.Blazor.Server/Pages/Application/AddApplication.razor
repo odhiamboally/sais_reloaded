@@ -1,0 +1,535 @@
+﻿@page "/add-application"
+@inherits BaseValidationComponent<CreateApplicationRequest>
+@inject AppState AppState
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
+@inject IServiceManager ServiceManager
+
+<h3>Create New Application</h3>
+<br />
+
+<EditForm Model="@createApplicationRequest" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+
+    <!-- Section 1: Applicant Details -->
+    <div class="card mb-4">
+        <div class="card-header">Applicant Details</div>
+        <div class="card-body">
+
+            <div class="row g-3 align-items-start">
+                <!-- First Name -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label">First Name <span class="text-danger">*</span></label>
+                    <InputText @bind-Value="createApplicationRequest.FirstName"
+                               class="form-control form-control-sm " />
+
+                    @foreach (var error in GetValidationMessages("Name"))
+                    {
+                        <div class="invalid-feedback d-block">@error</div>
+                    }
+
+                    <ValidationMessage For="@(() => createApplicationRequest.FirstName)" />
+                </div>
+
+                <!-- Middle Name -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label">Middle Name</label>
+                    <InputText @bind-Value="createApplicationRequest.MiddleName"
+                               class="form-control form-control-sm " />
+                    <ValidationMessage For="@(() => createApplicationRequest.MiddleName)" />
+                </div>
+
+                <!-- Last Name -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                    <InputText @bind-Value="createApplicationRequest.LastName"
+                               class="form-control form-control-sm " />
+                    <ValidationMessage For="@(() => createApplicationRequest.LastName)" />
+                </div>
+
+                <!-- ID/Passport Number -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label">ID/Passport Number <span class="text-danger">*</span></label>
+                    <InputText @bind-Value="createApplicationRequest.IDNumber"
+                               class="form-control form-control-sm "
+                    maxlength="20" />
+                    <ValidationMessage For="@(() => createApplicationRequest.IDNumber)" />
+                </div>
+            </div>
+
+            <div class="row g-3 align-items-start mt-3">
+
+                <!-- Date of Birth -->
+                <div class="col-12 col-sm-6 col-md-2">
+                    <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                    <RadzenDatePicker @bind-Value="createApplicationRequest.DateOfBirth"
+                                      DateFormat="dd/MM/yyyy"
+                                      Max="@DateTime.Today"
+                                      ShowTime="false"
+                                      AllowClear="true"
+                                      Placeholder="Select Date of Birth"
+                                      Style="width:100%; margin-top:.25rem;"
+                                      Class="form-control-sm" />
+                    <ValidationMessage For="@(() => createApplicationRequest.DateOfBirth)" />
+                </div>
+
+                <!-- Age -->
+                <div class="col-12 col-sm-6 col-md-2">
+                    <label class="form-label">Age</label>
+                    <input class="form-control form-control-sm"
+                    value="@CalculateAge(createApplicationRequest.DateOfBirth)"
+                    readonly
+                    style="margin-top:.25rem;" />
+                </div>
+
+                <!-- Sex -->
+                <div class="col-12 col-sm-6 col-md-4">
+                    <label class="form-label">Sex <span class="text-danger">*</span></label>
+                    <RadzenRadioButtonList @bind-Value="createApplicationRequest.SexId"
+                                           Data="@AppState.LookUpData?.Sexes"
+                                           TextProperty="Name"
+                                           ValueProperty="Id"
+                                           Orientation="Orientation.Horizontal"
+                                           Style="width:100%; margin-top:.25rem;"
+                                           Class="form-control-sm" />
+                    <ValidationMessage For="@(() => createApplicationRequest.SexId)" />
+                </div>
+
+                <!-- Marital Status -->
+                <div class="col-12 col-sm-6 col-md-2">
+                    <label class="form-label">Marital Status <span class="text-danger">*</span></label>
+                    <InputSelect @bind-Value="createApplicationRequest.MaritalStatusId"
+                                 class="form-control form-control-sm "
+                    style="margin-top:.25rem;">
+                        <option value="">Select Status</option>
+                        @foreach (var s in AppState.LookUpData?.MaritalStatuses ?? [])
+                        {
+                            <option value="@s.Id">@s.Name</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => createApplicationRequest.MaritalStatusId)" />
+                </div>
+
+                <!-- Application Date -->
+                <div class="col-12 col-sm-6 col-md-2">
+                    <label class="form-label">Application Date</label>
+                    <input class="form-control form-control-sm "
+                    value="@DateTimeOffset.UtcNow.ToString("dd/MM/yyyy")"
+                    readonly
+                    style="margin-top:.25rem;" />
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Contact Information -->
+    <div class="card mb-4">
+        <div class="card-header">Contact Information</div>
+        <div class="card-body">
+            <div class="row g-3 align-items-start">
+
+                <!-- Email (required) -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                    <InputText id="email"
+                    @bind-Value="createApplicationRequest.Email"
+                    type="email"
+                               class="form-control form-control-sm "
+                    placeholder="you@example.com" />
+                    <ValidationMessage For="@(() => createApplicationRequest.Email)" />
+                </div>
+
+                <!-- Postal Address -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label for="postal" class="form-label">Postal Address</label>
+                    <InputText id="postal"
+                    @bind-Value="createApplicationRequest.PostalAddress"
+                               class="form-control form-control-sm " />
+                    <ValidationMessage For="@(() => createApplicationRequest.PostalAddress)" />
+                </div>
+
+                <!-- Physical Address (required) -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label for="physical" class="form-label">Physical Address <span class="text-danger">*</span></label>
+                    <InputText id="physical"
+                    @bind-Value="createApplicationRequest.PhysicalAddress"
+                               class="form-control form-control-sm " />
+                    <ValidationMessage For="@(() => createApplicationRequest.PhysicalAddress)" />
+                </div>
+
+                <!-- Telephone Contact (required) -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label for="phone" class="form-label">Telephone Contact <span class="text-danger">*</span></label>
+                    <InputText id="phone"
+                    @bind-Value="createApplicationRequest.TelephoneContact"
+                               class="form-control form-control-sm " />
+                    <ValidationMessage For="@(() => createApplicationRequest.TelephoneContact)" />
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Geolocation -->
+    <div class="card mb-4">
+        <div class="card-header">Geolocation</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- County -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>County  <span class="text-danger">*</span></label>
+                        <InputSelect @bind-Value="createApplicationRequest.CountyId"
+                                     class="form-control form-control-sm "
+                        @onchange="OnCountyChanged">
+                            <option value="">Select County</option>
+                            @foreach (var county in AppState.LookUpData?.Counties ?? [])
+                            {
+                                <option value="@county.Id">@county.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => createApplicationRequest.CountyId)" />
+                    </div>
+                </div>
+
+                <!-- Sub-County -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Sub-County  <span class="text-danger">*</span></label>
+                        <InputSelect @bind-Value="createApplicationRequest.SubCountyId"
+                                     class="form-control form-control-sm "
+                        disabled="@(createApplicationRequest.CountyId == 0)"
+                        @onchange="OnSubCountyChanged">
+                            <option value="">Select Sub-County</option>
+                            @foreach (var subCounty in (AppState.LookUpData?.SubCounties ?? []).Where(sc => sc.CountyId == createApplicationRequest.CountyId))
+                            {
+                                <option value="@subCounty.Id">@subCounty.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => createApplicationRequest.SubCountyId)" />
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Location  <span class="text-danger">*</span></label>
+                        <InputSelect @bind-Value="createApplicationRequest.LocationId"
+                                     class="form-control form-control-sm "
+                        disabled="@(createApplicationRequest.SubCountyId == 0)"
+                        @onchange="OnLocationChanged">
+                            <option value="">Select Location</option>
+                            @foreach (var location in (AppState.LookUpData?.Locations ?? []).Where(sc => sc.SubCountyId == createApplicationRequest.SubCountyId))
+                            {
+                                <option value="@location.Id">@location.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => createApplicationRequest.LocationId)" />
+                    </div>
+                </div>
+
+                <!-- Sub-Location -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Sub-Location  <span class="text-danger">*</span></label>
+                        <InputSelect @bind-Value="createApplicationRequest.SubLocationId"
+                                     class="form-control form-control-sm "
+                        disabled="@(createApplicationRequest.LocationId == 0)"
+                        @onchange="OnSubLocationChanged">
+                            <option value="">Select Sub-Location</option>
+                            @foreach (var subLocation in (AppState.LookUpData?.SubLocations ?? []).Where(sc => sc.LocationId == createApplicationRequest.LocationId))
+                            {
+                                <option value="@subLocation.Id">@subLocation.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => createApplicationRequest.SubLocationId)" />
+                    </div>
+                </div>
+
+                <!-- Village -->
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Village  <span class="text-danger">*</span></label>
+                        <InputSelect @bind-Value="createApplicationRequest.VillageId"
+                                     class="form-control form-control-sm "
+                        disabled="@(createApplicationRequest.SubLocationId == 0)">
+                            <option value="">Select Village</option>
+                            @foreach (var village in (AppState.LookUpData?.Villages ?? []).Where(sc => sc.SubLocationId == createApplicationRequest.SubLocationId))
+                            {
+                                <option value="@village.Id">@village.Name</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="@(() => createApplicationRequest.VillageId)" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Programme Selection -->
+    <div class="card mb-4">
+        <div class="card-header">Programme(s) Applied For</div>
+        <div class="card-body">
+            <div class="card-body d-flex flex-wrap gap-4">
+                @foreach (var programme in AppState.LookUpData?.Programmes ?? [])
+                {
+                    <div class="form-check me-4">
+                        <input type="checkbox" class="form-check-input "
+                        checked="@SelectedProgramIds.Contains(programme.Id)"
+                        @onchange="@((ChangeEventArgs e) => OnProgramCheckboxChanged(e, programme.Id))" />
+                        <label class="form-check-label">@programme.Name</label>
+                    </div>
+                }
+            </div>
+            <ValidationMessage For="@(() => createApplicationRequest.ProgramIds)" />
+        </div>
+    </div>
+
+    <!-- Declaration -->
+    <div class="card mb-4">
+        <div class="card-header">Declaration</div>
+        <div class="card-body">
+            <div class="row g-3 justify-content-center">
+                <!-- Signature Canvas -->
+                <div class="col-lg-8 col-md-10">
+                    <label class="form-label">Signature</label>
+                    <canvas id="signatureCanvas"
+                    width="800"
+                    height="300"
+                    class="border mb-2"
+                    style="width: 100%; max-width: 100%; height: auto;">
+                    </canvas>
+                    <div class="d-flex justify-content-start">
+                        <button type="button"
+                        class="btn btn-sm btn-secondary"
+                        @onclick="ClearSignature">
+                            Clear Signature
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Declaration Checkbox -->
+            <div class="form-check mt-4">
+                <InputCheckbox @bind-Value="createApplicationRequest.DeclarationAccepted" class="form-check-input " />
+                <label class="form-check-label ms-2">
+                    I hereby declare that the information provided in this application is true to the best of my knowledge.
+                </label>
+                <ValidationMessage For="@(() => createApplicationRequest.DeclarationAccepted)" />
+            </div>
+        </div>
+    </div>
+
+
+    <div class="btn-group-responsive">
+        <RadzenButton Text="Submit"
+        ButtonStyle="ButtonStyle.Info"
+        ButtonType="ButtonType.Submit"
+        Shade="Shade.Darker"
+        Size="ButtonSize.Medium"
+        IsBusy=@IsButtonBusy
+        Class="btn-responsive"  />
+
+        <RadzenButton Text="Cancel"
+        ButtonStyle="ButtonStyle.Danger"
+        Shade="Shade.Light"
+        Size="ButtonSize.Medium"
+        IsBusy=@IsButtonBusy
+        Class="btn-responsive"
+        Click="@(() => Navigation.NavigateTo("/applications"))" />
+
+        <RadzenButton Text="Reset"
+        ButtonStyle="ButtonStyle.Base"
+        ButtonType="ButtonType.Reset"
+        Shade="Shade.Dark"
+        Size="ButtonSize.Medium"
+        IsBusy=@IsButtonBusy
+        Class="btn-responsive"
+        Click="@(() => ResetForm())" />
+    </div>
+
+</EditForm>
+
+<br />
+
+@code {
+
+    private bool IsButtonBusy { get; set; } = false;
+
+    private CreateApplicationRequest createApplicationRequest { get; set; } = new() 
+    { 
+        ApplicationDate = DateTimeOffset.UtcNow ,
+        DeclarationDate = DateTimeOffset.UtcNow,
+        ApplicationStatus = "Pending",
+    };
+
+    private List<int> SelectedProgramIds { get; set; } = [];
+
+    private string ApplicationDateString =>
+      DateTimeOffset.UtcNow.ToString("dd/MM/yyyy");
+
+    private string AgeString =>
+        CalculateAge(createApplicationRequest.DateOfBirth).ToString();
+
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JsRuntime.InvokeVoidAsync("signaturePad.initialize", "signatureCanvas");
+        }
+    }
+
+    private List<SexResponse> sexes = [];
+    private List<MaritalStatusResponse> maritalStatuses = [];
+    private List<CountyResponse> counties = [];
+    private List<SubCountyResponse> subCounties = [];
+    private List<LocationResponse> locations = [];
+    private List<SubLocationResponse> subLocations = [];
+    private List<VillageResponse> villages = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            sexes = AppState.LookUpData?.Sexes ?? [];
+            maritalStatuses = AppState.LookUpData?.MaritalStatuses ?? [];
+            counties = AppState.LookUpData?.Counties ?? [];
+            subCounties = AppState.LookUpData?.SubCounties ?? [];
+            locations = AppState.LookUpData?.Locations ?? [];
+            subLocations = AppState.LookUpData?.SubLocations ?? [];
+            villages = AppState.LookUpData?.Villages ?? [];
+
+
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            if (await ValidateModel())
+            {
+                await SaveSignature();
+                createApplicationRequest.ApplicationStatus = "Pending";
+                var addResponse = await ServiceManager.ApplicationService.CreateAsync(createApplicationRequest);
+
+
+                if (addResponse.Successful)
+                {
+                    await JsRuntime.InvokeVoidAsync("alert", "Application created successfully.");
+                    Navigation.NavigateTo("/applications");
+                }
+                else
+                {
+                    await JsRuntime.InvokeVoidAsync("alert", "Failed to create application.");
+                }
+            }
+            else
+            {
+                await JsRuntime.InvokeVoidAsync("alert", "Please correct the errors in the form.");
+            }
+
+
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+    }
+
+    private int CalculateAge(DateTimeOffset? dob)
+    {
+        if (!dob.HasValue) return 0;
+        var today = DateTime.Today;
+        var age = today.Year - dob.Value.Year;
+        if (dob.Value.Date > today.AddYears(-age)) age--;
+        return age;
+    }
+
+    private async Task SaveSignature()
+    {
+        var dataUrl = await JsRuntime.InvokeAsync<string>("signaturePad.getDataUrl");
+        if (!string.IsNullOrWhiteSpace(dataUrl))
+        {
+            var base64 = dataUrl[(dataUrl.IndexOf(',') + 1)..];
+            createApplicationRequest.ImageSignature = Convert.FromBase64String(base64);
+        }
+    }
+
+    private async Task ClearSignature()
+    {
+        await JsRuntime.InvokeVoidAsync("signaturePad.clear");
+    }
+
+    private void OnCountyChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var selectedCountyId))
+        {
+            createApplicationRequest.CountyId = selectedCountyId;
+            createApplicationRequest.SubCountyId = 0;
+            createApplicationRequest.LocationId = 0;
+            createApplicationRequest.SubLocationId = 0;
+            createApplicationRequest.VillageId = 0;
+        }
+    }
+
+    private void OnSubCountyChanged(ChangeEventArgs e)
+    {
+        createApplicationRequest.SubCountyId = int.Parse(e.Value?.ToString() ?? "0");
+        createApplicationRequest.LocationId = 0;
+        createApplicationRequest.SubLocationId = 0;
+        createApplicationRequest.VillageId = 0;
+    }
+
+    private void OnLocationChanged(ChangeEventArgs e)
+    {
+        createApplicationRequest.LocationId = int.Parse(e.Value?.ToString() ?? "0");
+        createApplicationRequest.SubLocationId = 0;
+        createApplicationRequest.VillageId = 0;
+    }
+
+    private void OnSubLocationChanged(ChangeEventArgs e)
+    {
+        createApplicationRequest.SubLocationId = int.Parse(e.Value?.ToString() ?? "0");
+        createApplicationRequest.VillageId = 0;
+    }
+
+    private void OnProgramCheckboxChanged(ChangeEventArgs e, int programmeId)
+    {
+        var isChecked = (bool)e.Value!;
+        if (isChecked && !SelectedProgramIds.Contains(programmeId))
+            SelectedProgramIds.Add(programmeId);
+        else if (!isChecked)
+            SelectedProgramIds.Remove(programmeId);
+
+        createApplicationRequest.ProgramIds = SelectedProgramIds.ToList();
+    }
+
+    private async Task ResetForm()
+    {
+        createApplicationRequest = new CreateApplicationRequest
+        {
+            ApplicationDate = DateTimeOffset.UtcNow,
+            DeclarationDate = DateTimeOffset.UtcNow,
+            ApplicationStatus = "Pending",
+            ProgramIds = new List<int>()
+        };
+
+        SelectedProgramIds.Clear();
+        await ClearSignature();
+        StateHasChanged();
+    }
+
+    private async Task ValidateAll() => await ValidateModel();
+}

@@ -1,0 +1,130 @@
+﻿@page "/edit-sex/{Id:int}"
+@inject IServiceManager ServiceManager
+@inject NavigationManager Navigation
+@inject AppState AppState
+@inject IJSRuntime JSRuntime
+
+<h3>Edit Sex</h3>
+
+<br />
+
+
+<EditForm Model="@updateSexRequest" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <RadzenLabel Text="Name" />
+    <RadzenTextBox @bind-Value="updateSexRequest.Name" Style="width:100%" />
+    <ValidationMessage For="@(() => updateSexRequest.Name)" />
+
+    <div class="d-flex gap-2 mt-4 justify-content-end" style="max-width: 400px;">
+
+
+        <RadzenButton Text="Save"
+                      ButtonStyle="ButtonStyle.Info"
+                      ButtonType="ButtonType.Submit"
+                      Shade="Shade.Darker"
+                      Size="ButtonSize.Medium"
+                      IsBusy=@IsButtonBusy
+                      Class="me-2 flex-fill" />
+                       
+
+        <RadzenButton Text="Cancel"
+                      ButtonStyle="ButtonStyle.Danger"
+                      ButtonType="ButtonType.Reset"
+                      Shade="Shade.Light"
+                      Size="ButtonSize.Medium"
+                      IsBusy=@IsButtonBusy
+                      Class="flex-fill"
+                      Click="@(() => Navigation.NavigateTo("/sexes"))" />
+
+
+    </div>
+</EditForm>
+
+
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private bool IsButtonBusy = false;
+
+    private UpdateSexRequest updateSexRequest = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            //Get From AppState
+            var stateData = AppState.LookUpData?.Sexes.FirstOrDefault(x => x.Id == Id);
+            if (stateData != null)
+            {
+                updateSexRequest = new UpdateSexRequest
+                    {
+                        Id = stateData.Id,
+                        Name = stateData.Name
+                    };
+            }
+            else
+            {
+                //Get From API
+                var serviceResponse = await ServiceManager.SexService.GetByIdAsync(Id);
+                if (serviceResponse.Successful)
+                {
+                    updateSexRequest = new UpdateSexRequest
+                        {
+                            Id = serviceResponse.Data?.Id ?? 0,
+                            Name = serviceResponse.Data?.Name
+                        };
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Could not load record.");
+                    Navigation.NavigateTo("/marital-statuses");
+                }
+
+            }
+        }
+        catch (Exception)
+        {
+            
+            throw;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            var response = await ServiceManager.SexService.UpdateAsync(Id, updateSexRequest);
+
+            if (response.Successful && response.Data != null)
+            {
+                var updated = response.Data;
+
+                var index = AppState.LookUpData?.Sexes.FindIndex(x => x.Id == updated.Id);
+
+                if (index.HasValue && index.Value >= 0)
+                {
+                    var sexes = AppState.LookUpData?.Sexes;
+                    if (sexes != null)
+                    {
+                        sexes[index.Value] = updated;
+                    }
+
+                    StateHasChanged(); // Trigger UI update
+                }
+
+                await JSRuntime.InvokeVoidAsync("alert", "Updated successfully");
+                Navigation.NavigateTo("/sexes");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error: {response.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Critical error: {ex.Message}");
+        }
+    }
+}

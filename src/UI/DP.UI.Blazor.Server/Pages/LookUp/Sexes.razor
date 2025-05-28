@@ -1,0 +1,93 @@
+﻿@page "/sexes"
+@inject IServiceManager ServiceManager
+@inject NavigationManager Navigation
+@inject AppState AppState
+@inject IJSRuntime JSRuntime
+
+
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">Sex</h3>
+    <RadzenButton Text="Add New"
+                  ButtonStyle="ButtonStyle.Success"
+                  Shade="Shade.Dark"
+                  Size="ButtonSize.Small"
+                  Icon="add_circle"
+                  IsBusy=@IsButtonBusy
+                  Disabled="@IsButtonBusy"
+                  Click="@(() => AddSex())" />
+</div>
+
+<br />
+
+<RadzenDataGrid Data="@SexList" TItem="SexResponse" RowSelect="@EditSex" ShowPagingSummary="true" PageSize="10">
+    <Columns>
+        <RadzenDataGridColumn TItem="SexResponse" Property="Name" Title="Name" />
+        <RadzenDataGridColumn TItem="SexResponse" Context="sex">
+            <Template Context="sex">
+                <RadzenButton Icon="edit" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Shade="Shade.Lighter" Click="@(args => EditSex(sex))" Style="margin-right: 5px;" />
+                <RadzenButton Icon="delete" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Danger" Shade="Shade.Darker" Click="@(args => DeleteSex(sex.Id))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private List<SexResponse> SexList = new();
+
+    private bool IsButtonBusy = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //var response = await ServiceManager.SexService.GetAllAsync();
+        var response = AppState.LookUpData?.Sexes;
+        SexList = response ?? [];
+    }
+
+    private void AddSex() => Navigation.NavigateTo("/add-sex");
+
+    private void EditSex(SexResponse sex) => Navigation.NavigateTo($"/edit-sex/{sex.Id}");
+
+    private async Task DeleteSex(int id)
+    {
+        try
+        {
+            if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this sex?"))
+                return;
+
+            var response = await ServiceManager.SexService.DeleteAsync(id);
+
+            if (response.Successful && response.Data != null)
+            {
+                // Local list update
+                SexList = SexList?.Where(x => x.Id != response.Data.Id).ToList() ?? [];
+
+                // AppState update
+                if (AppState.LookUpData?.Sexes is List<SexResponse> sexes)
+                {
+                    AppState.LookUpData.Sexes = sexes.Where(x => x.Id != response.Data.Id).ToList();
+                }
+
+                await JSRuntime.InvokeVoidAsync("alert", "Deleted successfully");
+
+                Navigation.NavigateTo("/sexes");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Deletion failed: {response.Message}");
+            }
+                
+        }
+        catch (Exception)
+        {
+            
+            throw;
+        }
+        finally
+        {
+            IsButtonBusy = false;
+            StateHasChanged();
+        }
+        
+    }
+}

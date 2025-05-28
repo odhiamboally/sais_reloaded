@@ -1,0 +1,102 @@
+﻿@page "/marital-statuses"
+@inject IServiceManager ServiceManager
+@inject NavigationManager Navigation
+@inject AppState AppState
+@inject IJSRuntime JSRuntime
+
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="m-0">Marital Status</h3>
+    <RadzenButton Text="Add New"
+                  ButtonStyle="ButtonStyle.Success"
+                  Shade="Shade.Dark"
+                  Size="ButtonSize.Small"
+                  Icon="add_circle"
+                  IsBusy=@IsButtonBusy
+                  Click="@(() => AddMaritalStatus())" />
+</div>
+<br />
+
+<RadzenDataGrid Data="@MaritalStatusList" TItem="MaritalStatusResponse" RowSelect="@EditMaritalStatus" ShowPagingSummary="true" PageSize="10">
+    <Columns>
+        <RadzenDataGridColumn TItem="MaritalStatusResponse" Property="Name" Title="Name" />
+        <RadzenDataGridColumn TItem="MaritalStatusResponse" Context="status">
+            <Template Context="status">
+
+                <RadzenButton Icon="edit"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Primary"
+                              Shade="Shade.Lighter"
+                              Click="@(args => EditMaritalStatus(status))"
+                              Style="margin-right: 5px;" />
+
+                <RadzenButton Icon="delete"
+                              Size="ButtonSize.Small"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Shade="Shade.Darker"
+                              Click="@(args => DeleteMaritalStatus(status.Id))" />
+
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+
+
+@code {
+
+
+    private List<MaritalStatusResponse> MaritalStatusList = new();
+
+    private bool IsButtonBusy = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //var response = await ServiceManager.MaritalStatusService.GetAllAsync();
+
+        var response = AppState.LookUpData?.MaritalStatuses;
+        MaritalStatusList = response ?? [];
+    }
+
+    private void AddMaritalStatus() => Navigation.NavigateTo("/add-marital-status");
+
+    private void EditMaritalStatus(MaritalStatusResponse status) => Navigation.NavigateTo($"/edit-marital-status/{status.Id}");
+
+    private async Task DeleteMaritalStatus(int id)
+    {
+        try
+        {
+            if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this sex?"))
+                return;
+
+            var response = await ServiceManager.MaritalStatusService.DeleteAsync(id);
+
+            if (response.Successful && response.Data != null)
+            {
+                MaritalStatusList = MaritalStatusList?.Where(x => x.Id != response.Data.Id).ToList() ?? [];
+
+                if (AppState.LookUpData?.MaritalStatuses is List<MaritalStatusResponse> maritalStatuses)
+                {
+                    AppState.LookUpData.MaritalStatuses = maritalStatuses.Where(x => x.Id != response.Data.Id).ToList();
+                }
+
+                StateHasChanged();
+
+                await JSRuntime.InvokeVoidAsync("alert", "Deleted successfully");
+
+                Navigation.NavigateTo("/marital-statuses");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Deletion failed: {response.Message}");
+            }
+
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+
+    }
+}

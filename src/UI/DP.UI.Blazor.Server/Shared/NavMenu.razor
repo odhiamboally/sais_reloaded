@@ -1,0 +1,62 @@
+﻿@inject NavigationManager Navigation
+
+<div class="top-row navbar navbar-dark bg-dark px-3">
+    <a class="navbar-brand" href="">SAIS</a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<aside class="sidebar @(collapseNavMenu ? "collapsed" : "")">
+
+    <nav class="nav flex-column">
+
+        <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+            <i class="fas fa-home me-2"></i> Home
+        </NavLink>
+
+        <NavLink class="nav-link" href="/applications">
+            <i class="fas fa-list-alt me-2"></i> Applications
+        </NavLink>
+
+        <!-- Reports (toggle submenu) -->
+        <a class="nav-link d-flex justify-content-between align-items-center"
+           @onclick="ToggleReports">
+            <span><i class="fas fa-chart-bar me-2"></i> Reports</span>
+            <i class="fas @(reportsExpanded ? "fa-chevron-down" : "fa-chevron-right")"></i>
+        </a>
+
+        <div class="nav flex-column ms-4 @(reportsExpanded ? "" : "d-none")">
+            <NavLink class="nav-link" href="/reports/applications">
+                <i class="fas fa-file-alt me-2"></i> Applications
+            </NavLink>
+        </div>
+
+        <!-- Admin (toggle submenu) -->
+        <a class="nav-link d-flex justify-content-between align-items-center"
+           @onclick="ToggleAdmin">
+            <span><i class="fas fa-cogs me-2"></i> Admin</span>
+            <i class="fas @(adminExpanded ? "fa-chevron-down" : "fa-chevron-right")"></i>
+        </a>
+
+        <div class="nav flex-column ms-4 @(adminExpanded ? "" : "d-none")">
+            <NavLink class="nav-link" href="/sexes">
+                <i class="fas fa-users me-2"></i> Sexes
+            </NavLink>
+            <NavLink class="nav-link" href="/marital-statuses">
+                <i class="fas fa-heart me-2"></i> Marital Statuses
+            </NavLink>
+        </div>
+
+    </nav>
+</aside>
+
+@code {
+    bool collapseNavMenu;
+    bool reportsExpanded;
+    bool adminExpanded;
+
+    void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+    void ToggleReports() => reportsExpanded = !reportsExpanded;
+    void ToggleAdmin() => adminExpanded = !adminExpanded;
+}

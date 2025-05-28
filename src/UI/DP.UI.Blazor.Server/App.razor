@@ -1,0 +1,86 @@
+﻿@* @inject JSRuntime JSRuntime *@
+
+
+
+<CascadingValue Value="AppState">
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingValue>
+
+@code {
+
+    [Inject] AppState AppState { get; set; } = default!;
+    [Inject] IServiceManager ServiceManager { get; set; } = default!;
+    [Inject] IJSRuntime JSRuntime { get; set; } = default!;
+
+    private AppResponse<LookUpResponse>? _lookupResponse;
+    private bool _hasAlerted;      
+    private bool _initialized;     
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (AppState.LookUpData == null)
+            {
+                _lookupResponse = await ServiceManager.DBService.GetAllLookupDataAsync();
+                if (_lookupResponse.Successful && _lookupResponse.Data != null)
+                {
+                    AppState.LookUpData = _lookupResponse.Data;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            
+            throw;
+        }
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if (!firstRender || _hasAlerted)
+                return;
+
+            _initialized = true;
+
+            if (_lookupResponse is null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Lookup call did not run as expected.");
+                    
+            }
+            else if (!_lookupResponse.Successful)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Failed to load lookup data: {_lookupResponse.Message}");
+                    
+            }
+            else if (_lookupResponse.Data is null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "No lookup data returned from server.");
+                    
+            }
+
+            _hasAlerted = true;  
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Failed to load applications: {ex.Message}");
+            throw;
+        }
+        
+    }
+
+}

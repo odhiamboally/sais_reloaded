@@ -1,0 +1,323 @@
+﻿. /* 1) Sidebar container */
+.sidebar {
+    position: fixed;
+    top: 56px; /* if you have a fixed header */
+    bottom: 0;
+    left: 0;
+    width: 260px; /* adjust to taste */
+    background: #f8f9fa; /* Bootstrap light */
+    border-right: 1px solid #dee2e6;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+
+/* 2) Link styles */
+.nav-link {
+    color: whitesmoke;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+}
+
+    .nav-link:hover {
+        background-color: #726da8;
+        text-decoration: none;
+        color: #E6E6FA
+    }
+
+    .nav-link.active {
+        background-color: #55508d; /* Bootstrap primary */
+        color: white;
+    }
+
+
+
+/* 3) Hide/show submenus */
+.d-none {
+    display: none !important;
+}
+
+/* 4) Nesting indent */
+.ms-4 {
+    margin-left: 1.5rem !important;
+}
+
+
+
+
+/* Give the table area a consistent height, but still allow scrolling if there are lots of rows. Tweak 300px to whatever suits your design.*/
+  
+.app-table-container {
+    height: 450px; 
+    overflow-y: auto; 
+    border: 1px solid #dee2e6; 
+    border-radius: 0.25rem; 
+}
+
+.app-table-container-bigger {
+    height: 650px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+/* Optional: keep the scrollbar from overlaying your table’s padding */
+.app-table-container table {
+    margin-bottom: 0;
+}
+
+
+.rz-datagrid .rz-column-actions {
+    min-width: 80px;
+}
+
+
+/* Desktop table styles */
+@media (min-width: 768px) {
+    .table-responsive-custom {
+        overflow-x: auto;
+    }
+
+    .mobile-card-view {
+        display: none;
+    }
+
+    .desktop-table-view {
+        display: block;
+    }
+
+    .btn-group-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: flex-end;
+    }
+}
+
+/* Mobile card styles */
+@media (max-width: 767.98px) {
+    .desktop-table-view {
+        display: none;
+    }
+
+    .mobile-card-view {
+        display: block;
+    }
+
+    .application-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+        .info-row:last-of-type {
+            border-bottom: none;
+            margin-bottom: 1rem;
+        }
+
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+        min-width: 80px;
+        font-size: 0.875rem;
+    }
+
+    .info-value {
+        flex: 1;
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .mobile-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f0f0f0;
+    }
+
+        .mobile-actions .rz-button {
+            flex: 1;
+            min-width: calc(50% - 0.25rem);
+        }
+}
+
+
+/* Responsive button group */
+.btn-group-responsive {
+    margin-top: 2rem;
+}
+
+/* Desktop: side-by-side buttons, right-aligned */
+@media (min-width: 768px) {
+    .btn-group-responsive {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        max-width: 400px;
+        margin-left: auto;
+    }
+
+    .btn-responsive {
+        min-width: 100px;
+        flex: 0 0 auto;
+    }
+}
+
+/* Mobile: stacked full-width buttons */
+@media (max-width: 767.98px) {
+    .btn-group-responsive {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .btn-responsive {
+        width: 100% !important;
+        flex: none !important;
+    }
+}
+
+
+
+/* Alternative stacked layout */
+.page-header-alt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+@media (max-width: 575.98px) {
+    .page-header-alt {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .add-button-alt {
+        width: 100%;
+    }
+}
+
+
+/* Main responsive search buttons */
+.search-buttons {
+    margin-top: 1rem;
+}
+
+/* Desktop table styles */
+@media (min-width: 768px) {
+    .desktop-table-view {
+        display: block !important;
+    }
+
+    .mobile-card-view {
+        display: none !important;
+    }
+
+    .table-responsive-custom {
+        overflow-x: auto;
+    }
+
+    .btn-group-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: flex-end;
+    }
+}
+
+/* Mobile card styles */
+@media (max-width: 767.98px) {
+    .desktop-table-view {
+        display: none !important;
+    }
+
+    .mobile-card-view {
+        display: block !important;
+    }
+    /* Rest of your mobile styles... */
+}
+
+/* Very small screens: stack vertically */
+@media (max-width: 480px) {
+    .search-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+
+
+/* Inline buttons (Option 2) */
+.search-buttons-inline {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-btn-inline {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 767.98px) {
+    .search-buttons-inline {
+        margin-top: 1rem;
+    }
+}
+
+/* Compact buttons (Option 3) */
+.search-buttons-compact {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+    .search-buttons-compact .search-btn-compact {
+        flex: 1;
+    }
+
+.search-btn-compact {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 575.98px) {
+    .search-btn-compact {
+        min-width: 44px;
+    }
+}
+
+.compact-input {
+    max-width: 180px; /* cap width so it never gets too wide */
+}

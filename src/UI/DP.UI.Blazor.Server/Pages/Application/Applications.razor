@@ -1,0 +1,972 @@
+﻿@page "/applications"
+@inject AppState AppState
+@inject NavigationManager Navigation
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject IServiceManager ServiceManager
+
+<div class="page-header-alt">
+    <h3 class="page-title">Applications</h3>
+    <RadzenButton Text="Add New"
+    ButtonStyle="ButtonStyle.Success"
+    Shade="Shade.Dark"
+    Size="ButtonSize.Small"
+    Icon="add_circle"
+    IsBusy=@IsButtonBusy
+    Class="add-button-alt"
+    Click="@(() => NavigateToCreate())" />
+</div>
+<br />
+
+<EditForm Model="@Filter" OnValidSubmit="OnSearch">
+    <div class="card mb-4">
+        <div class="card-header">Filter By:</div>
+        <div class="card-body">
+            <div class="row g-3">
+                @* — Row 1: text filters *@
+                <div class="col-md-3">
+                    <InputText @bind-Value="Filter.FirstName"
+                    @oninput="@((e) => OnFilterChanged())"
+                    class="form-control"
+                    placeholder="First Name" />
+                </div>
+                <div class="col-md-3">
+                    <InputText @bind-Value="Filter.LastName"
+                    @oninput="@((e) => OnFilterChanged())"
+                    class="form-control"
+                    placeholder="Last Name" />
+                </div>
+                <div class="col-md-3">
+                    <InputText @bind-Value="Filter.IDNumber"
+                    @oninput="@((e) => OnFilterChanged())"
+                    class="form-control"
+                    placeholder="ID Number" />
+                </div>
+                <div class="col-md-3">
+                    <InputText @bind-Value="Filter.Status"
+                    @oninput="@((e) => OnFilterChanged())"
+                    class="form-control"
+                    placeholder="Status" />
+                </div>
+
+                @* — Row 2: geography selects *@
+                <div class="col-md-3">
+                    <InputSelect @bind-Value="Filter.CountyId"
+                    @onchange="@((e) => OnFilterChanged())"
+                    class="form-select">
+                        <option value="">County</option>
+                        @foreach (var c in AppState.LookUpData?.Counties ?? [])
+                        {
+                            <option value="@c.Id">@c.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-3">
+                    <InputSelect @bind-Value="Filter.SubCountyId"
+                    @onchange="@((e) => OnFilterChanged())"
+                    class="form-select">
+                        <option value="">Sub-County</option>
+                        @foreach (var sc in AppState.LookUpData?.SubCounties ?? [])
+                        {
+                            <option value="@sc.Id">@sc.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-3">
+                    <InputSelect @bind-Value="Filter.LocationId"
+                    @onchange="@((e) => OnFilterChanged())"
+                    class="form-select">
+                        <option value="">Location</option>
+                        @foreach (var l in AppState.LookUpData?.Locations ?? [])
+                        {
+                            <option value="@l.Id">@l.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-3">
+                    <InputSelect @bind-Value="Filter.VillageId"
+                    @onchange="@((e) => OnFilterChanged())"
+                    class="form-select">
+                        <option value="">Village</option>
+                        @foreach (var v in AppState.LookUpData?.Villages ?? [])
+                        {
+                            <option value="@v.Id">@v.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="col-md-3">
+                    <RadzenDatePicker @bind-Value="Filter.FromDate"
+                    DateFormat="dd/MM/yyyy"
+                    Placeholder="From Date"
+                    AllowClear="true"
+                    Style="width:100%;" 
+                    Change="@((DateTime? value) => OnFilterChanged())" />
+                </div>
+
+                <div class="col-md-3">
+                    <RadzenDatePicker @bind-Value="Filter.ToDate"
+                    DateFormat="dd/MM/yyyy"
+                    Placeholder="To Date"
+                    AllowClear="true"
+                    Style="width:100%;"
+                    Change="@((DateTime? value) => OnFilterChanged())" />
+                </div>
+
+                <div class="col-md-6 d-flex gap-2 align-items-end">
+                    <div class="search-buttons-compact d-flex w-100 gap-2">
+                        <RadzenButton Text="Search"
+                        ButtonType="ButtonType.Submit"
+                        ButtonStyle="ButtonStyle.Info"
+                        Shade="Shade.Dark"
+                        Size="ButtonSize.Medium"
+                        IsBusy=@IsButtonBusy
+                        Disabled="@(SearchButtonDisabled)"
+                        Class="search-btn-compact flex-fill" />
+
+
+                        <RadzenButton Text="Clear"
+                        ButtonType="ButtonType.Reset"
+                        ButtonStyle="ButtonStyle.Base"
+                        Shade="Shade.Dark"
+                        Size="ButtonSize.Medium"
+                        IsBusy=@IsButtonBusy
+                        Class="search-btn-compact flex-fill"
+                        Click="@(() => ResetFilter())" />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+
+@if (IsLoading)
+{
+    <RadzenStack AlignItems="AlignItems.Center" class="rz-m-12" Gap="2rem">
+
+        <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Secondary" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+
+    </RadzenStack>
+
+}
+else if (ApplicationsList == null || !ApplicationsList.Any())
+{
+
+    <RadzenStack AlignItems="AlignItems.Center" class="rz-m-12" Gap="2rem">
+
+        <p>No records found.</p>
+
+    </RadzenStack>
+}
+else
+{
+
+    <div class="app-table-container mb-3">
+        <RadzenDataGrid @ref="ApplicationsGrid"
+        Data="@ApplicationsList"
+        TItem="ApplicationResponse"
+        PageSize="@PageSize"
+        Count="@TotalCount"
+        LoadData="LoadDataGrid"
+        IsLoading="@IsLoading"
+        PagerHorizontalAlign="HorizontalAlign.Right"
+        ShowPagingSummary="true"
+        PagingSummaryFormat="Page {0} of {1} ({2} records)"
+        EmptyText="No applications found">
+
+            <Columns>
+                <RadzenDataGridColumn TItem="ApplicationResponse" Property="FullName" Title="Applicant" Width="200px">
+                    <Template Context="app">
+                        @app.FirstName @app.MiddleName @app.LastName
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="ApplicationResponse" Property="Programmes" Title="Programmes" Width="250px">
+                    <Template Context="app">
+                        @string.Join(", ", app.Programmes?.Select(p => p.Name ?? string.Empty) ?? [])
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="ApplicationResponse" Property="ApplicationDate" Title="Application Date" Width="140px">
+                    <Template Context="app">
+                        @app.ApplicationDate.ToString("dd/MM/yyyy")
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="ApplicationResponse" Property="Status" Title="Status" Width="120px">
+                    <Template Context="app">
+                        @if (app.IsApproved)
+                        {
+                            <span class="badge bg-success">Approved</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">@app.Status</span>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="ApplicationResponse" Title="Actions" Width="300px" Sortable="false" Filterable="false">
+                    <Template Context="app">
+                        <div class="d-flex gap-1 flex-wrap">
+                            <RadzenButton Text="View"
+                            ButtonStyle="ButtonStyle.Secondary"
+                            Shade="Shade.Dark"
+                            Icon="visibility"
+                            Size="ButtonSize.ExtraSmall"
+                            IsBusy=@IsButtonBusy
+                            Click="@(() => ViewApplicationDetailsAsync(app))" />
+
+                            <RadzenButton Text="Edit"
+                            ButtonStyle="ButtonStyle.Primary"
+                            Shade="Shade.Lighter"
+                            Icon="edit"
+                            Size="ButtonSize.ExtraSmall"
+                            IsBusy=@IsButtonBusy
+                            Disabled="@(app.IsApproved)"
+                            Click="@(() => EditApplication(app.Id))" />
+
+                            <RadzenButton Text="Approve"
+                            ButtonStyle="ButtonStyle.Success"
+                            Shade="Shade.Dark"
+                            Icon="check_circle"
+                            Size="ButtonSize.ExtraSmall"
+                            IsBusy=@IsButtonBusy
+                            Disabled="@(app.IsApproved)"
+                            Click="@(() => ApproveApplicationAsync(app.Id))" />
+
+                            <RadzenButton Text="Delete"
+                            ButtonStyle="ButtonStyle.Danger"
+                            Shade="Shade.Darker"
+                            Icon="delete"
+                            Size="ButtonSize.ExtraSmall"
+                            IsBusy=@IsButtonBusy
+                            Click="@(() => DeleteApplicationAsync(app.Id))" />
+                        </div>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </div>
+
+    <br />
+
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <span>Page @CurrentPage of @TotalPages</span>
+        </div>
+        <div >
+            @if (TotalCount > 0)
+            {
+                <span>@ApplicationsList.Count Records</span>
+            }
+        </div>
+    </div>
+
+    //ToDo: Have it in the Table Footer
+    @if (!IsLoading && TotalPages > 1)
+    {
+        <div class="mt-3 d-flex flex-wrap justify-content-end gap-2">
+            <RadzenButton Text="First"
+            ButtonStyle="ButtonStyle.Info"
+            Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+            Shade="Shade.Darker"
+            Disabled="@IsFirstPage"
+            Click="@(() => GoToPage(1))" />
+
+            <RadzenButton Text="Previous"
+            ButtonStyle="ButtonStyle.Info"
+            Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+            Shade="Shade.Darker"
+            Disabled="@IsFirstPage"
+            Click="@(() => GoToPage(CurrentPage - 1))" />
+
+            @foreach (var page in VisiblePages)
+            {
+                <RadzenButton Text="@(page.ToString())"
+                Click="@(() => GoToPage(page))"
+                Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+                ButtonStyle="@(page == CurrentPage
+                              ? ButtonStyle.Base
+                              : ButtonStyle.Light)"
+                Shade="Shade.Dark" />
+            }
+
+            <RadzenButton Text="Next"
+            ButtonStyle="ButtonStyle.Info"
+            Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+            Shade="Shade.Darker"
+            Disabled="@IsLastPage"
+            Click="@(() => GoToPage(CurrentPage + 1))" />
+
+            <RadzenButton Text="Last"
+            ButtonStyle="ButtonStyle.Info"
+            Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+            Shade="Shade.Darker"
+            Disabled="@IsLastPage"
+            Click="@(() => GoToPage(TotalPages))" />
+        </div>
+    }
+
+    <br />
+
+}
+
+<RadzenMediaQuery Query="(max-width: 454px)" Change="OnMqChange" />
+
+
+@code {
+
+    RadzenDataGrid<ApplicationResponse>? ApplicationsGrid;
+
+    private CancellationTokenSource _cts = new();
+
+    private bool HasFilterData =>
+        !string.IsNullOrWhiteSpace(Filter.FirstName) ||
+        !string.IsNullOrWhiteSpace(Filter.LastName) ||
+        !string.IsNullOrWhiteSpace(Filter.IDNumber) ||
+        !string.IsNullOrWhiteSpace(Filter.Status) ||
+        Filter.CountyId != null && Filter.CountyId > 0 ||
+        Filter.SubCountyId != null && Filter.SubCountyId > 0 ||
+        Filter.LocationId != null && Filter.LocationId > 0 ||
+        Filter.SubLocationId != null && Filter.SubLocationId > 0 ||
+        Filter.VillageId != null && Filter.VillageId > 0 ||
+        Filter.FromDate.HasValue ||
+        Filter.ToDate.HasValue;
+
+
+
+    private Dictionary<int, int?> PageCursorMap = new() { { 1, null } };
+    private Dictionary<int, List<ApplicationResponse>> PageDataMap = new();
+    private Dictionary<int, DateTime> PageCacheTimestamps = new();
+
+    private List<ApplicationResponse>? ApplicationsList { get; set; }
+    private LookUpResponse? LookUpResponse { get; set; }
+    private ApplicationDetailResponse? ApplicationDetailResponse { get; set; }
+
+    private DataFilter Filter { get; set; } = new();
+
+    private List<int> _persistentVisiblePages = new List<int>(); // Tracks all known visible pages
+    private int _maxPersistedWindowSize = 9; // Maximum pages to keep visible
+
+    private int PageSize = 2;
+    private int CurrentPage = 1;
+    private int TotalPages = 0;
+    private int TotalCount = 0;
+
+    private List<int> VisiblePages = new();
+
+    private bool IsFirstPage { get; set; }
+    private bool IsLastPage { get; set; } 
+    private bool IsLoading { get; set; } = true;
+    bool IsButtonBusy { get; set; } = false;
+
+    private bool SearchButtonDisabled => IsButtonBusy || !HasFilterData;
+
+    bool isMobile;
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            IsLoading = true;
+
+            Filter.PageSize = PageSize;
+
+            ResetPaginationState();
+
+            StateHasChanged(); 
+
+            ApplicationsList = AppState.Applications;
+
+            if (AppState?.Applications?.Count > 0)
+            {
+
+                await RecalculatePaginationFromAppState();
+
+                UpdateVisiblePages();
+            }
+            else
+            {
+
+                await LoadDataGrid(new LoadDataArgs { Skip = 0, Top = PageSize });
+                //await LoadApplications();
+            }
+
+        }
+        catch (Exception ex)
+        {
+            // Log error (inject ILogger)
+            // Optionally show error to user
+            await JSRuntime.InvokeVoidAsync("alert", $"Failed to load applications: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+
+
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // This runs when parameters change, including route parameters
+        // Reset state if this is a fresh navigation
+        if (ApplicationsList?.Count == 0 && !IsLoading)
+        {
+            await OnInitializedAsync();
+        }
+    }
+
+    async Task OnSearch()
+    {
+        //await ApplicationsGrid.FirstPage();
+        await LoadApplicationsAsync();
+    }
+
+    async Task LoadDataGrid(LoadDataArgs args)
+    {
+        IsLoading = true;
+
+        try
+        {
+            await LoadApplicationsAsync();
+
+        }
+        catch (Exception)
+        {
+            throw;
+        }
+        finally
+        {
+            IsLoading = false;
+            //StateHasChanged();
+        }
+    }
+
+    private async Task LoadApplicationsAsync()
+    {
+        try
+        {
+            var applicationResponse = await ServiceManager.ApplicationService.GetAllAsync(Filter, _cts);
+            if (applicationResponse == null || applicationResponse.Data == null)
+            {
+                ResetPaginationState();
+
+                await JSRuntime.InvokeVoidAsync("alert", "No applications data available.");
+
+                return;
+            }
+
+            if (applicationResponse.Data?.NextCursor.HasValue == true)
+            {
+                PageCursorMap[2] = applicationResponse.Data.NextCursor;
+            }
+
+            ApplicationsList = applicationResponse.Data?.Items ?? [];
+
+            TotalCount = applicationResponse.Data?.TotalCount ?? 0;
+            TotalPages = applicationResponse.Data?.TotalPages ?? 0;
+            CurrentPage = applicationResponse.Data?.CurrentPage ?? 1;
+            IsFirstPage = applicationResponse.Data?.IsFirstPage ?? false;
+            IsLastPage = applicationResponse.Data?.IsLastPage ?? false;
+
+            Filter.Cursor = applicationResponse.Data?.NextCursor;
+            Filter.PageNumber = applicationResponse.Data?.CurrentPage ?? 1;
+            Filter.TotalCount = applicationResponse.Data?.TotalCount ?? 0;
+            Filter.TotalPages = applicationResponse.Data?.TotalPages ?? 0;
+
+            AppState.MergeApplications(ApplicationsList); 
+
+            UpdateVisiblePages();
+
+        }
+        catch (Exception ex)
+        {
+            ResetPaginationState();
+
+            await JSRuntime.InvokeVoidAsync("alert", $"Failed to load applications data. | {ex.Message}");
+            throw;
+
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+
+    }
+
+    private async Task ApproveApplicationAsync(int id)
+    {
+        IsLoading = true;
+        try
+        {
+            var approveResponse = await ServiceManager.ApplicationService.ApproveAsync(id);
+
+            if (approveResponse.Successful)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Application approved!");
+                var oldApplication = ApplicationsList?.Where(a => a.Id == id);
+                if (oldApplication != null && oldApplication.Any())
+                {
+                    var application = oldApplication.First();
+                    application.IsApproved = true;
+                    application.Status = "Approved";
+
+                    // Replace the old application in the list with the updated one
+                    var index = ApplicationsList?.FindIndex(a => a.Id == id);
+                    if (index >= 0 && approveResponse.Data != null)
+                    {
+                        ApplicationsList[index ?? 0] = approveResponse.Data;
+                    }
+                }
+
+                StateHasChanged();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", approveResponse.Message);
+            }
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task ViewApplicationDetailsAsync(ApplicationResponse app)
+    {
+        try
+        {
+            var applicationDetailsResponse = await ServiceManager.ApplicationService.GetApplicationDetailsAsync(app.Id);
+
+            if (!applicationDetailsResponse.Successful && applicationDetailsResponse.Data == null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Failed to load application details.");
+            }
+            else
+            {
+                ApplicationDetailResponse = applicationDetailsResponse.Data;
+
+                await DialogService.OpenAsync(
+                    "Application Details",
+                    ds => @<ApplicationDetails Application="ApplicationDetailResponse" />,
+                    new DialogOptions
+                    {
+                        Width = "700px",
+                        Resizable = true,
+                        Draggable = true,
+                        CloseDialogOnOverlayClick = true
+                    });
+            }
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+
+    }
+
+    private void ViewApplicantApplications(int applicantId) => Navigation.NavigateTo($"/applications/{applicantId}");
+
+    private void EditApplication(int id) => Navigation.NavigateTo($"/edit-application/{id}");
+
+    private async Task DeleteApplicationAsync(int id)
+    {
+        try
+        {
+            IsButtonBusy = true;
+            var confirm = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+            if (!confirm)
+            {
+                IsButtonBusy = false;
+                return;
+            }
+
+            var deleteResponse = await ServiceManager.ApplicationService.DeleteAsync(id);
+
+            if (deleteResponse.Successful && deleteResponse.Data is not null)
+            {
+                // Local list update
+                ApplicationsList = ApplicationsList?.Where(x => x.Id != deleteResponse.Data.Id).ToList() ?? [];
+
+                // AppState update
+                if (AppState.Applications is List<ApplicationResponse> applications)
+                {
+                    AppState.Applications = applications.Where(x => x.Id != deleteResponse.Data.Id).ToList();
+                }
+
+                AppState.RemoveApplication(deleteResponse.Data);
+
+                
+
+                StateHasChanged();
+
+                await LoadApplicationsAsync();
+
+                await JSRuntime.InvokeVoidAsync("alert", deleteResponse.Successful ? "Application deleted successfully." : "Error deleting application.");
+
+                //Navigation.NavigateTo("/applications");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error deleting application: {deleteResponse.Message}");
+            }
+
+
+        }
+        catch (Exception)
+        {
+            
+            throw;
+        }
+        finally
+        {
+            IsButtonBusy = false;
+            UpdateVisiblePages();
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateToCreate() => Navigation.NavigateTo("/add-application");
+
+    private void OnFilterChanged()
+    {
+        StateHasChanged(); // This triggers a re-render to update the button state
+    }
+
+    private async Task ResetFilter()
+    {
+        Filter = new(); 
+
+        await ApplicationsGrid?.Reload();
+
+        //await LoadApplications();
+        StateHasChanged();
+    }
+
+    private void UpdateVisiblePages(bool forceRecalculate = false)
+    {
+        // If we have persisted pages and not forcing recalculate
+        if (_persistentVisiblePages.Any() && !forceRecalculate && _persistentVisiblePages.Contains(CurrentPage))
+        {
+            // Just use the existing window
+            VisiblePages = _persistentVisiblePages;
+            return;
+        }
+
+        // Calculate new window
+        int startPage, endPage;
+
+        // If we have previous pages, try to extend from them
+        if (_persistentVisiblePages.Any())
+        {
+            int minPage = _persistentVisiblePages.Min();
+            int maxPage = _persistentVisiblePages.Max();
+
+            if (CurrentPage < minPage)
+            {
+                // Navigating left - extend window left
+                startPage = Math.Max(1, CurrentPage);
+                endPage = maxPage;
+            }
+            else if (CurrentPage > maxPage)
+            {
+                // Navigating right - extend window right
+                startPage = minPage;
+                endPage = Math.Min(TotalPages, CurrentPage);
+            }
+            else
+            {
+                // Shouldn't happen due to initial check
+                startPage = minPage;
+                endPage = maxPage;
+            }
+
+            // Ensure we don't exceed max window size
+            if (endPage - startPage + 1 > _maxPersistedWindowSize)
+            {
+                if (CurrentPage < minPage)
+                {
+                    // Slide window left
+                    endPage = startPage + _maxPersistedWindowSize - 1;
+                }
+                else
+                {
+                    // Slide window right
+                    startPage = endPage - _maxPersistedWindowSize + 1;
+                }
+            }
+        }
+        else
+        {
+            // Initial load - start with current page + next
+            startPage = Math.Max(1, CurrentPage);
+            endPage = Math.Min(TotalPages, CurrentPage + 1);
+        }
+
+        _persistentVisiblePages = Enumerable.Range(startPage, endPage - startPage + 1).ToList();
+        VisiblePages = _persistentVisiblePages;
+    }
+
+    private async Task GoToPage(int page)
+    {
+        try
+        {
+            IsLoading = true;
+
+            if (page < 1 || page > TotalPages)
+                return;
+
+            // Check cache first
+            if (IsPageCached(page))
+            {
+                ApplicationsList = PageDataMap[page];
+                CurrentPage = page;
+                IsFirstPage = page == 1;
+                IsLastPage = page == TotalPages;
+                Filter.PageNumber = page;
+                Filter.TotalCount = TotalCount;
+                Filter.TotalPages = TotalPages;
+                Filter.Cursor = GetCursorForPage(page);
+                UpdateVisiblePages();
+                return;
+            }
+
+            // If requesting a page beyond what we've loaded before
+            if (page > TotalPages && !IsLoading)
+            {
+                // Don't allow jumping to unknown pages until initial load
+                await JSRuntime.InvokeVoidAsync("alert", "Please load data first - Click Next");
+                return;
+            }
+
+            IsLoading = true;
+            //StateHasChanged();
+
+            Filter.Cursor = GetCursorForPage(page);
+            Filter.PageNumber = page;
+
+            var response = await ServiceManager.ApplicationService.GetAllAsync(Filter, _cts);
+            if (response?.Data == null) return;
+
+            if (response.Data.TotalPages > TotalPages)
+            {
+                TotalPages = response.Data.TotalPages;
+            }
+
+            ApplicationsList = response.Data.Items ?? [];
+
+            AppState.MergeApplications(ApplicationsList);
+
+            PageDataMap[page] = ApplicationsList;
+
+            PageCacheTimestamps[page] = DateTime.UtcNow;
+
+            UpdateCursorMappings(page, response.Data.NextCursor, response.Data.PreviousCursor);
+
+            CurrentPage = page;
+            IsFirstPage = response.Data.IsFirstPage;
+            IsLastPage = response.Data.IsLastPage;
+
+            if (page == 1) IsLoading = false;
+
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error loading page {page}: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            UpdateVisiblePages();
+            StateHasChanged();
+        }
+    }
+
+    private int? GetCursorForPage(int targetPage)
+    {
+        // Simple case: first page
+        if (targetPage == 1) return null;
+
+        // Exact match
+        if (PageCursorMap.TryGetValue(targetPage, out var cursor))
+            return cursor;
+
+        // Find nearest lower page with cursor
+        var nearestPage = PageCursorMap.Keys
+            .Where(k => k < targetPage)
+            .OrderByDescending(k => k)
+            .FirstOrDefault();
+
+        return nearestPage > 0 ? PageCursorMap[nearestPage] : null;
+    }
+
+    private void UpdateCursorMappings(int currentPage, int? nextCursor, int? prevCursor)
+    {
+        if (nextCursor.HasValue)
+        {
+            PageCursorMap[currentPage + 1] = nextCursor.Value;
+        }
+
+        if (prevCursor.HasValue && currentPage > 1)
+        {
+            PageCursorMap[currentPage - 1] = prevCursor.Value;
+        }
+
+        // Prune old cursor mappings to prevent memory bloat
+        if (PageCursorMap.Count > 50) 
+        {
+            var oldestPages = PageCursorMap.Keys
+                .OrderBy(k => k)
+                .Take(PageCursorMap.Count - 50);
+
+            foreach (var page in oldestPages)
+            {
+                InvalidateCache(page);
+            }
+        }
+    }
+
+    private void ResetPaginationState()
+    {
+        // Reset all pagination-related properties to default values
+        ApplicationsList = [];
+        TotalCount = 0;
+        TotalPages = 0;
+        CurrentPage = 1;
+        IsFirstPage = true;
+        IsLastPage = false;
+        Filter.Cursor = null;
+        Filter.PageNumber = 1;
+        Filter.TotalCount = 0;
+        Filter.TotalPages = 0;
+        PageCursorMap.Clear();
+        VisiblePages = [];
+        UpdateVisiblePages();
+    }
+
+    private async Task RecalculatePaginationFromAppState()
+    {
+        // If loading from AppState, we need to recalculate pagination info
+        // since AppState might not have current pagination state
+
+        // Reset filter to get first page
+        var tempFilter = new DataFilter
+            {
+                PageSize = Filter.PageSize,
+                PageNumber = 1,
+                Cursor = null
+            };
+
+        var applicationResponse = await ServiceManager.ApplicationService.GetAllAsync(tempFilter, _cts);
+        if (applicationResponse?.Data != null)
+        {
+            ApplicationsList = applicationResponse.Data.Items;
+            // Update pagination info but keep existing Applications from AppState
+            TotalCount = applicationResponse.Data.TotalCount;
+            TotalPages = applicationResponse.Data.TotalPages;
+            CurrentPage = 1;
+            IsFirstPage = true;
+            IsLastPage = applicationResponse.Data.TotalPages <= 1;
+
+            // Update filter with fresh data
+            Filter.TotalCount = TotalCount;
+            Filter.TotalPages = TotalPages;
+
+            // Set up cursor mapping for page 2
+            if (applicationResponse.Data.NextCursor.HasValue)
+            {
+                PageCursorMap[2] = applicationResponse.Data.NextCursor;
+            }
+        }
+    }
+
+    private void UpdatePaginationState(PagedResult<ApplicationResponse> data)
+    {
+        TotalCount = data.TotalCount;
+        TotalPages = data.TotalPages;
+        CurrentPage = data.CurrentPage;
+        IsFirstPage = data.IsFirstPage;
+        IsLastPage = data.IsLastPage;
+        Filter.Cursor = data.NextCursor;
+        Filter.PageNumber = data.CurrentPage;
+    }
+
+    private bool IsPageCached(int page)
+    {
+        if (!PageDataMap.TryGetValue(page, out var cachedData))
+            return false;
+
+        if (!PageCacheTimestamps.TryGetValue(page, out var timestamp))
+            return false;
+
+        return DateTime.UtcNow - timestamp < TimeSpan.FromMinutes(5);
+    }
+
+    public void InvalidateCache(int page)
+    {
+        PageCursorMap.Remove(page);
+        PageDataMap.Remove(page);
+        PageCacheTimestamps.Remove(page);
+
+        PageDataMap.Clear();
+        PageCursorMap.Clear();
+        PageCursorMap[1] = null; // Reset to initial state
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+
+
+    void OnMqChange(bool matches)
+    {
+        isMobile = matches; 
+    }
+
+    private void OnCountyChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var selectedCountyId))
+        {
+            Filter.CountyId = selectedCountyId;
+            Filter.SubCountyId = 0;
+            Filter.LocationId = 0;
+            Filter.SubLocationId = 0;
+            Filter.VillageId = 0;
+        }
+    }
+
+    private void OnSubCountyChanged(ChangeEventArgs e)
+    {
+        Filter.SubCountyId = int.Parse(e.Value?.ToString() ?? "0");
+        Filter.LocationId = 0;
+        Filter.SubLocationId = 0;
+        Filter.VillageId = 0;
+    }
+
+    private void OnLocationChanged(ChangeEventArgs e)
+    {
+        Filter.LocationId = int.Parse(e.Value?.ToString() ?? "0");
+        Filter.SubLocationId = 0;
+        Filter.VillageId = 0;
+    }
+
+    private void OnSubLocationChanged(ChangeEventArgs e)
+    {
+        Filter.SubLocationId = int.Parse(e.Value?.ToString() ?? "0");
+        Filter.VillageId = 0;
+    }
+
+
+}
