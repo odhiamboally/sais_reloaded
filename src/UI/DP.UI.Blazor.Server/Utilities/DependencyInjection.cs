@@ -9,6 +9,7 @@ using DP.UI.Blazor.Server.Utilities.Session;
 using DP.UI.Blazor.Server.Utilities.StateManagement;
 
 using FluentValidation;
+using Blazored.FluentValidation;
 
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.CookiePolicy;
@@ -144,10 +145,8 @@ public static class DependencyInjection
         }
         catch (Exception)
         {
-
             throw;
         }
-
     }
 
     public static IServiceCollection AddApplicationConfiguration(this IServiceCollection services, IConfiguration configuration)

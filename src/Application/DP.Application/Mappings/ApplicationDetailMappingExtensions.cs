@@ -68,7 +68,9 @@ public static class ApplicationDetailMappingExtensions
             entity.NameSignature,
             string.Empty,
             entity.Status,
-            entity.Programmes.Split(',').Select(pr => new ProgrammeResponse(0, pr.Trim())).ToList()
+            entity.Programmes?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                          ?.Select(pr => new ProgrammeResponse(0, pr.Trim()))
+                          ?.ToList() ?? new List<ProgrammeResponse>()
 
 
         );

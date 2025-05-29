@@ -1,5 +1,4 @@
 ﻿@page "/add-application"
-@inherits BaseValidationComponent<CreateApplicationRequest>
 @inject AppState AppState
 @inject NavigationManager Navigation
 @inject IJSRuntime JsRuntime
@@ -8,8 +7,9 @@
 <h3>Create New Application</h3>
 <br />
 
-<EditForm Model="@createApplicationRequest" OnValidSubmit="HandleSubmit">
-    <DataAnnotationsValidator />
+<EditForm EditContext="@_editContext" OnValidSubmit="HandleSubmit" OnInvalidSubmit="HandleInvalid">
+
+    <FluentValidationValidator @ref="fluentValidationValidator"/>
 
     <!-- Section 1: Applicant Details -->
     <div class="card mb-4">
@@ -20,39 +20,37 @@
                 <!-- First Name -->
                 <div class="col-12 col-sm-6 col-md-3">
                     <label class="form-label">First Name <span class="text-danger">*</span></label>
-                    <InputText @bind-Value="createApplicationRequest.FirstName"
-                               class="form-control form-control-sm " />
 
-                    @foreach (var error in GetValidationMessages("Name"))
-                    {
-                        <div class="invalid-feedback d-block">@error</div>
-                    }
-
+                    <InputText @bind-Value="createApplicationRequest.FirstName" class="form-control form-control-sm " />
+                               
                     <ValidationMessage For="@(() => createApplicationRequest.FirstName)" />
                 </div>
 
                 <!-- Middle Name -->
                 <div class="col-12 col-sm-6 col-md-3">
                     <label class="form-label">Middle Name</label>
-                    <InputText @bind-Value="createApplicationRequest.MiddleName"
-                               class="form-control form-control-sm " />
-                    <ValidationMessage For="@(() => createApplicationRequest.MiddleName)" />
+                    
+                    <InputText @bind-Value="createApplicationRequest.MiddleName" class="form-control form-control-sm " />
+                               
                 </div>
 
                 <!-- Last Name -->
                 <div class="col-12 col-sm-6 col-md-3">
                     <label class="form-label">Last Name <span class="text-danger">*</span></label>
-                    <InputText @bind-Value="createApplicationRequest.LastName"
-                               class="form-control form-control-sm " />
+
+                    <InputText @bind-Value="createApplicationRequest.LastName" class="form-control form-control-sm " />
+                    
                     <ValidationMessage For="@(() => createApplicationRequest.LastName)" />
                 </div>
 
                 <!-- ID/Passport Number -->
                 <div class="col-12 col-sm-6 col-md-3">
                     <label class="form-label">ID/Passport Number <span class="text-danger">*</span></label>
+                    
                     <InputText @bind-Value="createApplicationRequest.IDNumber"
                                class="form-control form-control-sm "
-                    maxlength="20" />
+                               maxlength="20" />
+
                     <ValidationMessage For="@(() => createApplicationRequest.IDNumber)" />
                 </div>
             </div>
@@ -62,6 +60,7 @@
                 <!-- Date of Birth -->
                 <div class="col-12 col-sm-6 col-md-2">
                     <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                    
                     <RadzenDatePicker @bind-Value="createApplicationRequest.DateOfBirth"
                                       DateFormat="dd/MM/yyyy"
                                       Max="@DateTime.Today"
@@ -70,6 +69,8 @@
                                       Placeholder="Select Date of Birth"
                                       Style="width:100%; margin-top:.25rem;"
                                       Class="form-control-sm" />
+
+
                     <ValidationMessage For="@(() => createApplicationRequest.DateOfBirth)" />
                 </div>
 
@@ -85,6 +86,7 @@
                 <!-- Sex -->
                 <div class="col-12 col-sm-6 col-md-4">
                     <label class="form-label">Sex <span class="text-danger">*</span></label>
+                    
                     <RadzenRadioButtonList @bind-Value="createApplicationRequest.SexId"
                                            Data="@AppState.LookUpData?.Sexes"
                                            TextProperty="Name"
@@ -92,21 +94,24 @@
                                            Orientation="Orientation.Horizontal"
                                            Style="width:100%; margin-top:.25rem;"
                                            Class="form-control-sm" />
+
                     <ValidationMessage For="@(() => createApplicationRequest.SexId)" />
                 </div>
 
                 <!-- Marital Status -->
                 <div class="col-12 col-sm-6 col-md-2">
                     <label class="form-label">Marital Status <span class="text-danger">*</span></label>
+
                     <InputSelect @bind-Value="createApplicationRequest.MaritalStatusId"
                                  class="form-control form-control-sm "
-                    style="margin-top:.25rem;">
+                                 style="margin-top:.25rem;">
                         <option value="">Select Status</option>
                         @foreach (var s in AppState.LookUpData?.MaritalStatuses ?? [])
                         {
                             <option value="@s.Id">@s.Name</option>
                         }
                     </InputSelect>
+
                     <ValidationMessage For="@(() => createApplicationRequest.MaritalStatusId)" />
                 </div>
 
@@ -133,38 +138,47 @@
                 <!-- Email (required) -->
                 <div class="col-12 col-sm-6 col-md-3">
                     <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+
                     <InputText id="email"
-                    @bind-Value="createApplicationRequest.Email"
-                    type="email"
+                               @bind-Value="createApplicationRequest.Email"
+                               autocomplete="email"
+                               type="email"
                                class="form-control form-control-sm "
-                    placeholder="you@example.com" />
+                               placeholder="you@example.com" />
+
                     <ValidationMessage For="@(() => createApplicationRequest.Email)" />
                 </div>
 
                 <!-- Postal Address -->
                 <div class="col-12 col-sm-6 col-md-3">
                     <label for="postal" class="form-label">Postal Address</label>
+                    
                     <InputText id="postal"
-                    @bind-Value="createApplicationRequest.PostalAddress"
+                               @bind-Value="createApplicationRequest.PostalAddress"
                                class="form-control form-control-sm " />
+                    
                     <ValidationMessage For="@(() => createApplicationRequest.PostalAddress)" />
                 </div>
 
                 <!-- Physical Address (required) -->
                 <div class="col-12 col-sm-6 col-md-3">
                     <label for="physical" class="form-label">Physical Address <span class="text-danger">*</span></label>
+
                     <InputText id="physical"
-                    @bind-Value="createApplicationRequest.PhysicalAddress"
+                               @bind-Value="createApplicationRequest.PhysicalAddress"
                                class="form-control form-control-sm " />
+
                     <ValidationMessage For="@(() => createApplicationRequest.PhysicalAddress)" />
                 </div>
 
                 <!-- Telephone Contact (required) -->
                 <div class="col-12 col-sm-6 col-md-3">
                     <label for="phone" class="form-label">Telephone Contact <span class="text-danger">*</span></label>
+                    
                     <InputText id="phone"
-                    @bind-Value="createApplicationRequest.TelephoneContact"
+                               @bind-Value="createApplicationRequest.TelephoneContact"
                                class="form-control form-control-sm " />
+
                     <ValidationMessage For="@(() => createApplicationRequest.TelephoneContact)" />
                 </div>
 
@@ -182,15 +196,17 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>County  <span class="text-danger">*</span></label>
+                        
                         <InputSelect @bind-Value="createApplicationRequest.CountyId"
                                      class="form-control form-control-sm "
-                        @onchange="OnCountyChanged">
+                                     @onchange="OnCountyChanged">
                             <option value="">Select County</option>
                             @foreach (var county in AppState.LookUpData?.Counties ?? [])
                             {
                                 <option value="@county.Id">@county.Name</option>
                             }
                         </InputSelect>
+
                         <ValidationMessage For="@(() => createApplicationRequest.CountyId)" />
                     </div>
                 </div>
@@ -199,16 +215,18 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Sub-County  <span class="text-danger">*</span></label>
+
                         <InputSelect @bind-Value="createApplicationRequest.SubCountyId"
                                      class="form-control form-control-sm "
-                        disabled="@(createApplicationRequest.CountyId == 0)"
-                        @onchange="OnSubCountyChanged">
+                                     disabled="@(createApplicationRequest.CountyId == 0)"
+                                     @onchange="OnSubCountyChanged">
                             <option value="">Select Sub-County</option>
                             @foreach (var subCounty in (AppState.LookUpData?.SubCounties ?? []).Where(sc => sc.CountyId == createApplicationRequest.CountyId))
                             {
                                 <option value="@subCounty.Id">@subCounty.Name</option>
                             }
                         </InputSelect>
+
                         <ValidationMessage For="@(() => createApplicationRequest.SubCountyId)" />
                     </div>
                 </div>
@@ -217,16 +235,18 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Location  <span class="text-danger">*</span></label>
+
                         <InputSelect @bind-Value="createApplicationRequest.LocationId"
                                      class="form-control form-control-sm "
-                        disabled="@(createApplicationRequest.SubCountyId == 0)"
-                        @onchange="OnLocationChanged">
+                                     disabled="@(createApplicationRequest.SubCountyId == 0)"
+                                     @onchange="OnLocationChanged">
                             <option value="">Select Location</option>
                             @foreach (var location in (AppState.LookUpData?.Locations ?? []).Where(sc => sc.SubCountyId == createApplicationRequest.SubCountyId))
                             {
                                 <option value="@location.Id">@location.Name</option>
                             }
                         </InputSelect>
+
                         <ValidationMessage For="@(() => createApplicationRequest.LocationId)" />
                     </div>
                 </div>
@@ -235,16 +255,18 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Sub-Location  <span class="text-danger">*</span></label>
+
                         <InputSelect @bind-Value="createApplicationRequest.SubLocationId"
                                      class="form-control form-control-sm "
-                        disabled="@(createApplicationRequest.LocationId == 0)"
-                        @onchange="OnSubLocationChanged">
+                                     disabled="@(createApplicationRequest.LocationId == 0)"
+                                     @onchange="OnSubLocationChanged">
                             <option value="">Select Sub-Location</option>
                             @foreach (var subLocation in (AppState.LookUpData?.SubLocations ?? []).Where(sc => sc.LocationId == createApplicationRequest.LocationId))
                             {
                                 <option value="@subLocation.Id">@subLocation.Name</option>
                             }
                         </InputSelect>
+                        
                         <ValidationMessage For="@(() => createApplicationRequest.SubLocationId)" />
                     </div>
                 </div>
@@ -253,15 +275,17 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Village  <span class="text-danger">*</span></label>
+
                         <InputSelect @bind-Value="createApplicationRequest.VillageId"
                                      class="form-control form-control-sm "
-                        disabled="@(createApplicationRequest.SubLocationId == 0)">
+                                     disabled="@(createApplicationRequest.SubLocationId == 0)">
                             <option value="">Select Village</option>
                             @foreach (var village in (AppState.LookUpData?.Villages ?? []).Where(sc => sc.SubLocationId == createApplicationRequest.SubLocationId))
                             {
                                 <option value="@village.Id">@village.Name</option>
                             }
                         </InputSelect>
+                        
                         <ValidationMessage For="@(() => createApplicationRequest.VillageId)" />
                     </div>
                 </div>
@@ -285,6 +309,7 @@
                     </div>
                 }
             </div>
+
             <ValidationMessage For="@(() => createApplicationRequest.ProgramIds)" />
         </div>
     </div>
@@ -294,6 +319,7 @@
         <div class="card-header">Declaration</div>
         <div class="card-body">
             <div class="row g-3 justify-content-center">
+
                 <!-- Signature Canvas -->
                 <div class="col-lg-8 col-md-10">
                     <label class="form-label">Signature</label>
@@ -312,12 +338,17 @@
                     </div>
                 </div>
             </div>
+
             <!-- Declaration Checkbox -->
             <div class="form-check mt-4">
-                <InputCheckbox @bind-Value="createApplicationRequest.DeclarationAccepted" class="form-check-input " />
+
+                <InputCheckbox @bind-Value="createApplicationRequest.DeclarationAccepted" class="form-check-input "  />
+
                 <label class="form-check-label ms-2">
                     I hereby declare that the information provided in this application is true to the best of my knowledge.
                 </label>
+
+                
                 <ValidationMessage For="@(() => createApplicationRequest.DeclarationAccepted)" />
             </div>
         </div>
@@ -357,7 +388,11 @@
 
 @code {
 
+    private EditContext _editContext; 
+    private FluentValidationValidator fluentValidationValidator;
     private bool IsButtonBusy { get; set; } = false;
+    private bool isSubmitting { get; set; } = false;
+
 
     private CreateApplicationRequest createApplicationRequest { get; set; } = new() 
     { 
@@ -375,6 +410,32 @@
         CalculateAge(createApplicationRequest.DateOfBirth).ToString();
 
 
+    private Dictionary<string, List<string>> validationErrors = new();
+    private string errorMessage = string.Empty;
+
+
+    protected override void OnInitialized()
+    {
+        // use the same model instance you’ll submit
+        _editContext = new EditContext(createApplicationRequest);
+
+        // subscribe so every time ANY field changes,
+        // we validate just that one property
+        _editContext.OnFieldChanged += async (_, args) =>
+        {
+            if (fluentValidationValidator is not null)
+            {
+                // run validation for only the property the user just changed
+                await fluentValidationValidator.ValidateAsync(options =>  
+                    options.IncludeProperties(args.FieldIdentifier.FieldName));
+          
+                // tell Blazor to repaint the validation messages
+                _editContext.NotifyValidationStateChanged();
+            }
+        };
+
+        base.OnInitialized();
+    }
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -418,34 +479,56 @@
     {
         try
         {
-            if (await ValidateModel())
+            IsButtonBusy = true;
+
+
+            if (await fluentValidationValidator.ValidateAsync())
             {
-                await SaveSignature();
-                createApplicationRequest.ApplicationStatus = "Pending";
-                var addResponse = await ServiceManager.ApplicationService.CreateAsync(createApplicationRequest);
+                isSubmitting = true;
+            }
 
+            await SaveSignature();
 
-                if (addResponse.Successful)
-                {
-                    await JsRuntime.InvokeVoidAsync("alert", "Application created successfully.");
-                    Navigation.NavigateTo("/applications");
-                }
-                else
-                {
-                    await JsRuntime.InvokeVoidAsync("alert", "Failed to create application.");
-                }
+            createApplicationRequest.ApplicationStatus = "Pending";
+            var addResponse = await ServiceManager.ApplicationService.CreateAsync(createApplicationRequest);
+            if (addResponse.Successful && addResponse.Data != null)
+            {
+                await JsRuntime.InvokeVoidAsync("alert", "Application created successfully.");
+                Navigation.NavigateTo("/applications");
             }
             else
             {
-                await JsRuntime.InvokeVoidAsync("alert", "Please correct the errors in the form.");
+                await JsRuntime.InvokeVoidAsync("alert", addResponse.Message);
             }
 
-
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            throw;
+            errorMessage = "An unexpected error occurred. Please try again.";
+            await JsRuntime.InvokeVoidAsync("alert", $"{errorMessage}|{ex.Message}");
         }
+        finally
+        {
+            isSubmitting = false;
+            IsButtonBusy = false;
+        }
+    }
+
+    void HandleInvalid(EditContext ctx)
+    {
+        // Debug: Log all validation messages
+        var messages = ctx.GetValidationMessages().ToList();
+        foreach (var msg in messages)
+        {
+            JsRuntime.InvokeVoidAsync("showToast", $"Validation Error: {msg}");
+        }
+
+        validationErrors = ctx.GetValidationMessages()
+         .GroupBy(v => v)
+         .ToDictionary(g => g.Key, g => g.ToList());
+
+        JsRuntime.InvokeVoidAsync("showToast", "Please correct the errors in the form.", "error");
+        JsRuntime.InvokeVoidAsync("scrollToTop");
     }
 
     private int CalculateAge(DateTimeOffset? dob)
@@ -531,5 +614,10 @@
         StateHasChanged();
     }
 
-    private async Task ValidateAll() => await ValidateModel();
+    private void ClearErrors()
+    {
+        validationErrors.Clear();
+        errorMessage = string.Empty;
+    }
+
 }

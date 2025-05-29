@@ -10,29 +10,37 @@
 <br />
 
 <div class="d-flex justify-content-between align-items-center mb-4 gap-2">
-    <h3 class="page-title">Applications Report</h3>
+    @if (isMobile)
+    {
+        <h3 class="page-title">Applications Report</h3>
+    }
+    else
+    {
+        <h5 class="page-title">Applications Report</h5>
+    }
+
     <div class="d-flex gap-2 ms-auto">
         <div class="page-header-alt">
-            <RadzenButton Text="Export to PDF"
-            ButtonStyle="ButtonStyle.Success"
-            Shade="Shade.Dark"
-            Size="ButtonSize.Small"
-            Icon="picture_as_pdf"
-            IsBusy=@IsButtonBusy
-            Class="add-button-alt"
-            Click="@(() => ExportToPdf())" 
-            Disabled="@IsExporting" />
+            <RadzenButton Text="@(isMobile ? "Pdf" : "Export To Pdf")"
+                          ButtonStyle="ButtonStyle.Success"
+                          Shade="Shade.Dark"
+                          Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+                          Icon="picture_as_pdf"
+                          IsBusy=@IsButtonBusy
+                          Class="add-button-alt"
+                          Click="@(() => ExportToPdf())"
+                          Disabled="@IsExporting" />
         </div>
         <div class="page-header-alt">
-            <RadzenButton Text="Export to Excel"
-            ButtonStyle="ButtonStyle.Success"
-            Shade="Shade.Dark"
-            Size="ButtonSize.Small"
-            Icon="grid_on"
-            IsBusy=@IsButtonBusy
-            Class="add-button-alt"
-            Click="@(() => ExportToExcel())"
-            Disabled="@IsExporting" />
+            <RadzenButton Text="@(isMobile ? "Excel" : "Export To Excel")"
+                          ButtonStyle="ButtonStyle.Success"
+                          Shade="Shade.Dark"
+                          Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
+                          Icon="grid_on"
+                          IsBusy=@IsButtonBusy
+                          Class="add-button-alt"
+                          Click="@(() => ExportToExcel())"
+                          Disabled="@IsExporting" />
         </div>
     </div>
 </div>
@@ -63,100 +71,164 @@
     </RadzenAlert>
 }
 
-<RadzenCard Class="app-table-container-bigger mb-3">
+@* <RadzenCard Class="app-table-container-bigger mb-3">
     <ChildContent>
-        <div style="overflow-x: auto; width: 100%;">
-            <RadzenDataGrid @ref="ApplicationsGrid"
-                            Data="@Applications"
-                            TItem="ApplicationDetailResponse"
-                            ShowPagingSummary="true"
-                            PageSize="@PageSize"
-                            IsLoading="@IsLoading"
-                            Style="min-width: 1400px;">
-                <Columns>
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="FirstName" Title="First Name" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="LastName" Title="Last Name" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="IDNumber" Title="ID Number" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Age" Title="Age" Width="60px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Sex" Title="Sex" Width="80px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="MaritalStatus" Title="Marital Status" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="County" Title="County" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="SubCounty" Title="Sub County" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Location" Title="Location" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="SubLocation" Title="Sub Location" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Village" Title="Village" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Title="Programmes">
-                        <Template Context="app">
-                            @(app.Programmes is not null && app.Programmes.Any() ? string.Join(", ", app.Programmes.Select(p => p.Name)) : "—")
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Status" Title="Status" Width="100px" />
-                    <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="ApplicationDate" Title="Application Date" FormatString="{0:dd/MM/yyyy}" Width="120px" />
-                </Columns>
-            </RadzenDataGrid>
-        </div>
+        
     </ChildContent>
-</RadzenCard>
+</RadzenCard> *@
 
+<div style="overflow-x: auto; width: 100%;">
+    <RadzenDataGrid @ref="ApplicationsGrid"
+                    Data="@Applications"
+                    TItem="ApplicationDetailResponse"
+                    ShowPagingSummary="true"
+                    PageSize="@PageSize"
+                    IsLoading="@IsLoading"
+                    Style="min-width: 1400px;">
+        <Columns>
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="FirstName" Title="First Name" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="LastName" Title="Last Name" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="IDNumber" Title="ID Number" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Age" Title="Age" Width="60px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Sex" Title="Sex" Width="80px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="MaritalStatus" Title="Marital Status" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="County" Title="County" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="SubCounty" Title="Sub County" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Location" Title="Location" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="SubLocation" Title="Sub Location" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Village" Title="Village" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Title="Programmes">
+                <Template Context="app">
+                    @(app.Programmes is not null && app.Programmes.Any() ? string.Join(", ", app.Programmes.Select(p => p.Name)) : "—")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="Status" Title="Status" Width="100px" />
+            <RadzenDataGridColumn TItem="ApplicationDetailResponse" Property="ApplicationDate" Title="Application Date" FormatString="{0:dd/MM/yyyy}" Width="120px" />
+        </Columns>
 
-<br />
+        <FooterTemplate>
+            <div class="w-100 p-2">
+                @if (isMobile)
+                {
+                    <!-- Mobile Layout: Stacked -->
+                    <div class="d-flex flex-column gap-2">
+                        <!-- Page info on top -->
+                        <div class="text-center">
+                            <small>Page @CurrentPage of @TotalPages</small>
+                            @if (TotalCount > 0)
+                            {
+                                <small class="text-muted"> | @PageSize Records</small>
+                            }
+                        </div>
 
-@* ToDo: Have it in the RadzenCard Footer *@
-<div class="d-flex justify-content-between align-items-center">
-    <div>
-        <span>Page @CurrentPage of @TotalPages</span>
-    </div>
-    <div>
-        @if (TotalCount > 0)
-        {
-            <span>@PageSize Records</span>
-        }
-    </div>
+                        <!-- Pagination controls below -->
+                        @if (!IsLoading && TotalPages > 1)
+                        {
+                            <div class="d-flex justify-content-center flex-wrap gap-1">
+                                <RadzenButton Text="‹‹"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Size="ButtonSize.ExtraSmall"
+                                              Shade="Shade.Darker"
+                                              Disabled="@IsFirstPage"
+                                              Click="@(() => GoToPage(1))" />
+
+                                <RadzenButton Text="‹"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Size="ButtonSize.ExtraSmall"
+                                              Shade="Shade.Darker"
+                                              Disabled="@IsFirstPage"
+                                              Click="@(() => GoToPage(CurrentPage - 1))" />
+
+                                @foreach (var page in VisiblePages.Take(3))
+                                {
+                                    <RadzenButton Text="@(page.ToString())"
+                                                  Click="@(() => GoToPage(page))"
+                                                  Size="ButtonSize.ExtraSmall"
+                                                  ButtonStyle="@(page == CurrentPage ? ButtonStyle.Base : ButtonStyle.Light)"
+                                                  Shade="Shade.Dark" />
+                                }
+
+                                <RadzenButton Text="›"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Size="ButtonSize.ExtraSmall"
+                                              Shade="Shade.Darker"
+                                              Disabled="@IsLastPage"
+                                              Click="@(() => GoToPage(CurrentPage + 1))" />
+
+                                <RadzenButton Text="››"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Size="ButtonSize.ExtraSmall"
+                                              Shade="Shade.Darker"
+                                              Disabled="@IsLastPage"
+                                              Click="@(() => GoToPage(TotalPages))" />
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- Desktop Layout: Side by side -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <!-- Left side: Page info -->
+                        <div class="d-flex align-items-center gap-3">
+                            <span>Page @CurrentPage of @TotalPages</span>
+                            @if (TotalCount > 0)
+                            {
+                                <span class="text-muted">|</span>
+                                <span>@PageSize Records</span>
+                            }
+                        </div>
+
+                        <!-- Right side: Pagination controls -->
+                        @if (!IsLoading && TotalPages > 1)
+                        {
+                            <div class="d-flex flex-wrap gap-2">
+                                <RadzenButton Text="First"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Size="ButtonSize.Small"
+                                              Shade="Shade.Darker"
+                                              Disabled="@IsFirstPage"
+                                              Click="@(() => GoToPage(1))" />
+
+                                <RadzenButton Text="Previous"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Size="ButtonSize.Small"
+                                              Shade="Shade.Darker"
+                                              Disabled="@IsFirstPage"
+                                              Click="@(() => GoToPage(CurrentPage - 1))" />
+
+                                @foreach (var page in VisiblePages)
+                                {
+                                    <RadzenButton Text="@(page.ToString())"
+                                                  Click="@(() => GoToPage(page))"
+                                                  Size="ButtonSize.Small"
+                                                  ButtonStyle="@(page == CurrentPage ? ButtonStyle.Base : ButtonStyle.Light)"
+                                                  Shade="Shade.Dark" />
+                                }
+
+                                <RadzenButton Text="Next"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Size="ButtonSize.Small"
+                                              Shade="Shade.Darker"
+                                              Disabled="@IsLastPage"
+                                              Click="@(() => GoToPage(CurrentPage + 1))" />
+
+                                <RadzenButton Text="Last"
+                                              ButtonStyle="ButtonStyle.Info"
+                                              Size="ButtonSize.Small"
+                                              Shade="Shade.Darker"
+                                              Disabled="@IsLastPage"
+                                              Click="@(() => GoToPage(TotalPages))" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </FooterTemplate>
+
+    </RadzenDataGrid>
 </div>
 
-@if (!IsLoading && TotalPages > 1)
-{
-    <div class="mt-3 d-flex flex-wrap justify-content-end gap-2">
-        <RadzenButton Text="First"
-        ButtonStyle="ButtonStyle.Info"
-        Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
-        Shade="Shade.Darker"
-        Disabled="@IsFirstPage"
-        Click="@(() => GoToPage(1))" />
-
-        <RadzenButton Text="Previous"
-        ButtonStyle="ButtonStyle.Info"
-        Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
-        Shade="Shade.Darker"
-        Disabled="@IsFirstPage"
-        Click="@(() => GoToPage(CurrentPage - 1))" />
-
-        @foreach (var page in VisiblePages)
-        {
-            <RadzenButton Text="@(page.ToString())"
-            Click="@(() => GoToPage(page))"
-            Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
-            ButtonStyle="@(page == CurrentPage
-                              ? ButtonStyle.Base
-                              : ButtonStyle.Light)"
-            Shade="Shade.Dark" />
-        }
-
-        <RadzenButton Text="Next"
-        ButtonStyle="ButtonStyle.Info"
-        Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
-        Shade="Shade.Darker"
-        Disabled="@IsLastPage"
-        Click="@(() => GoToPage(CurrentPage + 1))" />
-
-        <RadzenButton Text="Last"
-        ButtonStyle="ButtonStyle.Info"
-        Size="@(isMobile ? ButtonSize.ExtraSmall : ButtonSize.Small)"
-        Shade="Shade.Darker"
-        Disabled="@IsLastPage"
-        Click="@(() => GoToPage(TotalPages))" />
-    </div>
-}
 
 <br />
 

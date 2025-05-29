@@ -3,6 +3,7 @@ using DP.UI.Blazor.Server.Contracts.Abstractions.IAppServices;
 using DP.UI.Blazor.Server.Contracts.Abstractions.IServices;
 using DP.UI.Blazor.Server.Dtos.Application;
 using DP.UI.Blazor.Server.Dtos.Common;
+using DP.UI.Blazor.Server.Exceptions;
 using DP.UI.Blazor.Server.Extensions;
 
 using FluentValidation;
@@ -64,8 +65,7 @@ internal sealed class ApplicationService : IApplicationService
             var validationResult = await _createValidator.ValidateAsync(createApplicationRequest);
             if (!validationResult.IsValid)
             {
-                return AppResponse<ApplicationResponse>.Failure($"{validationResult.Errors.Select(e => e.ErrorMessage).ToList()}");
-                
+                return AppResponse<ApplicationResponse>.ValidationFailure(validationResult.Errors);
             }
 
             createApplicationRequest.NameSignature = $"{createApplicationRequest.FirstName} {createApplicationRequest.MiddleName} {createApplicationRequest.LastName}";
@@ -84,9 +84,9 @@ internal sealed class ApplicationService : IApplicationService
                 ? AppResponse<ApplicationResponse>.Failure(apiResponse.Message!)
                 : AppResponse<ApplicationResponse>.Success(apiResponse.Message!, apiResponse.Data!);
         }
-        catch (ValidationException ex)
+        catch (AppValidationException ex)
         {
-            return AppResponse<ApplicationResponse>.Failure(ex.Message);
+            return AppResponse<ApplicationResponse>.ValidationFailure(ex.ValidationErrors);
         }
         catch (Exception)
         {
@@ -235,7 +235,7 @@ internal sealed class ApplicationService : IApplicationService
             var validationResult = await _updateValidator.ValidateAsync(updateApplicationRequest);
             if (!validationResult.IsValid)
             {
-                return AppResponse<ApplicationResponse>.Failure($"{validationResult.Errors.Select(e => e.ErrorMessage).ToList()}");
+                return AppResponse<ApplicationResponse>.ValidationFailure(validationResult.Errors);
             }
 
             if (id <= 0 || id != updateApplicationRequest.Id)
@@ -262,6 +262,10 @@ internal sealed class ApplicationService : IApplicationService
             return !apiResponse.Successful || apiResponse.Data == null
                 ? AppResponse<ApplicationResponse>.Failure(apiResponse.Message!)
                 : AppResponse<ApplicationResponse>.Success(apiResponse.Message!, apiResponse.Data!);
+        }
+        catch (AppValidationException ex)
+        {
+            return AppResponse<ApplicationResponse>.ValidationFailure(ex.ValidationErrors);
         }
         catch (Exception)
         {

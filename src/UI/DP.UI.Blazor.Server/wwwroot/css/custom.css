@@ -321,3 +321,31 @@
 .compact-input {
     max-width: 180px; /* cap width so it never gets too wide */
 }
+
+.card-header {
+    background-color: #cdcdcd !important;
+    color: black !important;
+    font-weight: 500;
+}
+
+/* Make RadzenDataGrid headers sticky */
+.rz-datatable-scrollable-header-table thead th,
+.rz-datatable thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background-color: #f8f9fa !important; /* Adjust to match your theme */
+    border-bottom: 2px solid #dee2e6 !important;
+}
+
+    /* If you have a navbar/header, adjust the top position */
+    .rz-datatable-scrollable-header-table thead th.with-navbar,
+    .rz-datatable thead th.with-navbar {
+        top: 60px !important; /* Adjust based on your navbar height */
+    }
+
+/* Ensure proper z-index layering */
+.rz-datatable-wrapper {
+    position: relative;
+    z-index: 1;
+}

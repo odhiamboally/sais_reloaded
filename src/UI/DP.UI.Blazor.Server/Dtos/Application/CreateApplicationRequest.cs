@@ -18,13 +18,13 @@ public record CreateApplicationRequest
     public string? PostalAddress { get; set; }
     public string? PhysicalAddress { get; set; }
     public string? TelephoneContact { get; set; }
-    public int SexId { get; set; }
-    public int MaritalStatusId { get; set; }
-    public int CountyId { get; set; }
-    public int SubCountyId { get; set; }
-    public int LocationId { get; set; }
-    public int SubLocationId { get; set; }
-    public int VillageId { get; set; }
+    public int SexId { get; set; } = 0;
+    public int MaritalStatusId { get; set; } = 0;
+    public int CountyId { get; set; } = 0;
+    public int SubCountyId { get; set; } = 0;
+    public int LocationId { get; set; } = 0;
+    public int SubLocationId { get; set; } = 0;
+    public int VillageId { get; set; } = 0;
     public string? NameSignature { get; set; }
     public byte[]? ImageSignature { get; set; }
     public DateTimeOffset ApplicationDate { get; set; }
