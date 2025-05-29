@@ -128,8 +128,6 @@ builder.Services.AddDataProtection()
 
 var app = builder.Build();
 
-var connectionString = app.Configuration.GetConnectionString("SAIS");
-app.Logger.LogInformation($"Using connection string: {connectionString?.Substring(0, Math.Min(50, connectionString.Length))}...");
 
 if (app.Environment.IsDevelopment())
 {
